@@ -166,41 +166,62 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1B1B1B),
         foregroundColor: Colors.white,
-        title: const Text("Hero's Barbearia", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Hero's Barbearia", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(icon: const Icon(Icons.logout, color: Colors.white), onPressed: () async { await authService.logout(); if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())); })
         ],
       ),
-      body: abas[_abaAtual],
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 20), // empurra o botão levemente para baixo
-        child: FloatingActionButton(
-          backgroundColor: const Color(0xFF1B1B1B),
-          foregroundColor: Colors.white,
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          onPressed: () => _abrirMenuCentral(context),
-          child: const Icon(Icons.add, size: 32),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        elevation: 8,
-        padding: EdgeInsets.zero,
-        child: SizedBox(
-          height: 64, // altura fixa do menu
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildTabItem(icon: Icons.analytics, label: 'Relat.', index: 0),
-              _buildTabItem(icon: Icons.content_cut, label: 'Serviços', index: 1),
-              const SizedBox(width: 48), // Espaço para o FAB
-              _buildTabItem(icon: Icons.payments, label: 'Despesas', index: 2),
-              _buildTabItem(icon: Icons.groups, label: 'Equipe', index: 3),
-            ],
+      body: Stack(
+        children: [
+          // Conteúdo Principal com espaço embaixo para não ser coberto pela navbar
+          Padding(
+            padding: const EdgeInsets.only(bottom: 64),
+            child: abas[_abaAtual],
           ),
-        ),
+          // HUD de botões Customizado na base
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildTabItem(icon: Icons.analytics, label: 'Relat.', index: 0),
+                  _buildTabItem(icon: Icons.content_cut, label: 'Serviços', index: 1),
+                  const SizedBox(width: 64), // Espaço para o FAB
+                  _buildTabItem(icon: Icons.payments, label: 'Despesas', index: 2),
+                  _buildTabItem(icon: Icons.groups, label: 'Equipe', index: 3),
+                ],
+              ),
+            ),
+          ),
+          // Botão FAB Flutuante Posicionado
+          Positioned(
+            bottom: 32, // Fica perfeitamente no meio da linha do nav bar (32px pra dentro, 24px pra fora)
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: FloatingActionButton(
+                  backgroundColor: const Color(0xFF1B1B1B),
+                  foregroundColor: Colors.white,
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  onPressed: () => _abrirMenuCentral(context),
+                  child: const Icon(Icons.add, size: 32),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
