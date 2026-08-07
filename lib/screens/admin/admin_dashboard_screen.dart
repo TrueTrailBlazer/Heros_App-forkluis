@@ -9,9 +9,78 @@ import '../../services/database_service.dart';
 import '../auth/login_screen.dart';
 import 'equipe_screen.dart'; // Importante para puxar a tela de Acerto
 
+// ==========================================
+// FUNÇÕES GLOBAIS DE DIALOG (MOVIDAS PARA O FAB CENTRAL)
+// ==========================================
+void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, double? precoAtual, double? comissaoAtual}) {
+  final nomeC = TextEditingController(text: nomeAtual);
+  final precoC = TextEditingController(text: precoAtual?.toString());
+  final comissaoC = TextEditingController(text: comissaoAtual?.toString() ?? '0');
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar', style: const TextStyle(fontWeight: FontWeight.bold)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(controller: nomeC, decoration: const InputDecoration(labelText: 'Nome (Ex: Pomada)')),
+          const SizedBox(height: 10),
+          TextField(controller: precoC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Preço Cliente (R\$)')),
+          const SizedBox(height: 10),
+          TextField(controller: comissaoC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Comissão Barbeiro (R\$)')),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+        ElevatedButton(
+          onPressed: () {
+            double p = double.tryParse(precoC.text.replaceAll(',', '.')) ?? 0;
+            double c = double.tryParse(comissaoC.text.replaceAll(',', '.')) ?? 0;
+            if (id == null) DatabaseService().addServico(nomeC.text, p, c);
+            else DatabaseService().updateServico(id, nomeC.text, p, c);
+            Navigator.pop(context);
+          },
+          child: const Text('Salvar'),
+        )
+      ],
+    ),
+  );
+}
+
+void mostrarDialogDespesa(BuildContext context) {
+  final descC = TextEditingController();
+  final valorC = TextEditingController();
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      title: const Text('Lançar Despesa', style: TextStyle(fontWeight: FontWeight.bold)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(controller: descC, decoration: const InputDecoration(labelText: 'Descrição (Ex: Água, Luz)')),
+          const SizedBox(height: 10),
+          TextField(controller: valorC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Valor (R\$)')),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+        ElevatedButton(
+          onPressed: () {
+            double v = double.tryParse(valorC.text.replaceAll(',', '.')) ?? 0;
+            DatabaseService().registrarDespesaVale('Despesa da Loja', descC.text, v);
+            Navigator.pop(context);
+          },
+          child: const Text('Lançar'),
+        )
+      ],
+    ),
+  );
+}
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
-
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
@@ -19,50 +88,97 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _abaAtual = 0;
 
+  void _abrirMenuCentral(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE0E0E0), borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 20),
+              const Text('O que você deseja adicionar?', style: TextStyle(color: Color(0xFF737784), fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(Icons.content_cut, color: Color(0xFF0047AB)),
+                title: const Text('Novo Serviço', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () { Navigator.pop(context); mostrarDialogServico(context); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.payments_outlined, color: Color(0xFF0047AB)),
+                title: const Text('Nova Despesa', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () { Navigator.pop(context); mostrarDialogDespesa(context); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_add_alt_1, color: Color(0xFF0047AB)),
+                title: const Text('Novo Barbeiro', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabItem({required IconData icon, required String label, required int index}) {
+    bool isSelected = _abaAtual == index;
+    return InkWell(
+      onTap: () => setState(() => _abaAtual = index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784)),
+          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
-    
-    final List<Widget> abas = [
-      const AbaRelatorios(),
-      const AbaServicos(),
-      const AbaFinanceiro(),
-      const EquipeScreen(), // Puxando do arquivo separado
-    ];
+    final List<Widget> abas = [const AbaRelatorios(), const AbaServicos(), const AbaFinanceiro(), const EquipeScreen()];
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text("Heros'app", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text("Hero's Barbearia"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await authService.logout();
-              if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-            },
-          )
+          IconButton(icon: const Icon(Icons.logout), onPressed: () async { await authService.logout(); if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())); })
         ],
       ),
       body: abas[_abaAtual],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _abaAtual,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey,
-          elevation: 0,
-          onTap: (index) => setState(() => _abaAtual = index),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Relatórios'),
-            BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Serviços'),
-            BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Despesas'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Equipe'),
-          ],
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF1B1B1B),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        onPressed: () => _abrirMenuCentral(context),
+        child: const Icon(Icons.add, size: 32),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildTabItem(icon: Icons.analytics_outlined, label: 'Relat.', index: 0),
+              _buildTabItem(icon: Icons.content_cut, label: 'Serviços', index: 1),
+              const SizedBox(width: 48), // Spacing for FAB
+              _buildTabItem(icon: Icons.payments_outlined, label: 'Despesas', index: 2),
+              _buildTabItem(icon: Icons.groups_outlined, label: 'Equipe', index: 3),
+            ],
+          ),
         ),
       ),
     );
@@ -70,7 +186,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 }
 
 // ==========================================
-// ABA 1: RELATÓRIOS E AVISOS (COM DOIS BOTÕES)
+// ABA 1: RELATÓRIOS E AVISOS
 // ==========================================
 class AbaRelatorios extends StatelessWidget {
   const AbaRelatorios({super.key});
@@ -78,21 +194,15 @@ class AbaRelatorios extends StatelessWidget {
   Widget _buildBotao(BuildContext context, String titulo, String tipo, IconData icone) {
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetalheRelatorioScreen(tipo: tipo, titulo: titulo))),
-      child: Card(
-        color: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-          child: Row(
-            children: [
-              Icon(icone, color: Colors.white, size: 28),
-              const SizedBox(width: 20),
-              Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              const Spacer(),
-              const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 18),
-            ],
-          ),
+      child: Container(
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        child: Row(
+          children: [
+            Icon(icone, color: const Color(0xFF1B1B1B), size: 24),
+            const SizedBox(width: 16),
+            Text('Relatório $titulo', style: const TextStyle(color: Color(0xFF1B1B1B), fontSize: 16, fontWeight: FontWeight.normal)),
+          ],
         ),
       ),
     );
@@ -112,8 +222,50 @@ class AbaRelatorios extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       children: [
+        // Faturamento Bruto
+        StreamBuilder<QuerySnapshot>(
+          stream: DatabaseService().getTodosOsCortes(),
+          builder: (context, snapshot) {
+            double lucroHoje = 0;
+            int qtdServicos = 0;
+            if (snapshot.hasData) {
+              DateTime inicioHoje = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+              var cortesHoje = snapshot.data!.docs.where((doc) {
+                var dados = doc.data() as Map<String, dynamic>? ?? {};
+                if (dados['data'] == null) return false;
+                return (dados['data'] as Timestamp).toDate().isAfter(inicioHoje) || (dados['data'] as Timestamp).toDate().isAtSameMomentAs(inicioHoje);
+              }).toList();
+              qtdServicos = cortesHoje.length;
+              lucroHoje = cortesHoje.fold(0, (s, doc) => s + (((doc.data() as Map)['valor'] ?? 0) as num).toDouble());
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE0E0E0))),
+              child: Column(
+                children: [
+                  const Text('Faturamento Bruto', style: TextStyle(color: Color(0xFF737784), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 8),
+                  Text('R\$ ${lucroHoje.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0047AB))),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.trending_up, color: Color(0xFF006400), size: 16),
+                      const SizedBox(width: 4),
+                      Text('$qtdServicos serviços realizados hoje', style: const TextStyle(color: Color(0xFF006400), fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+
+        // Acerto Pendente
         StreamBuilder<QuerySnapshot>(
           stream: DatabaseService().getBarbeiros(),
           builder: (context, snapshot) {
@@ -130,36 +282,42 @@ class AbaRelatorios extends StatelessWidget {
               if (_precisaPagar(diaPag, ultimoPag)) {
                 alertas.add(
                   Container(
-                    margin: const EdgeInsets.only(bottom: 15),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.red)),
-                    child: Row(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: const Border(
+                        left: BorderSide(color: Color(0xFFBA1A1A), width: 4),
+                        top: BorderSide(color: Color(0xFFE0E0E0)),
+                        right: BorderSide(color: Color(0xFFE0E0E0)),
+                        bottom: BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Acerto: $nome', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                              const Text('Fechamento pendente!', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, minimumSize: const Size(80, 30), padding: EdgeInsets.zero),
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
-                              child: const Text('RESUMO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            const Text('Acerto Pendente', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFBA1A1A), fontSize: 18)),
+                            const Icon(Icons.warning_amber_rounded, color: Color(0xFFBA1A1A)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Barbeiro: $nome', style: const TextStyle(color: Color(0xFF737784))),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: () => DatabaseService().marcarComoPago(b.id),
+                              child: const Text('Pagar', style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
-                            const SizedBox(height: 5),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(80, 30), padding: EdgeInsets.zero),
-                              onPressed: () => DatabaseService().marcarComoPago(b.id),
-                              child: const Text('PAGO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            )
+                            const SizedBox(width: 24),
+                            InkWell(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
+                              child: const Text('Ver Detalhes', style: TextStyle(color: Color(0xFF1B1B1B), fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
                           ],
                         )
                       ],
@@ -168,49 +326,23 @@ class AbaRelatorios extends StatelessWidget {
                 );
               }
             }
-            if (alertas.isEmpty) return const SizedBox();
             return Column(children: alertas);
           },
         ),
 
-        const Text('Exportar Relatórios PDF:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
-        const SizedBox(height: 15),
-        _buildBotao(context, 'Diário', 'Hoje', Icons.today),
-        _buildBotao(context, 'Semanal', 'Semana', Icons.date_range),
-        _buildBotao(context, 'Mensal', 'Mes', Icons.calendar_month),
-        
-        const SizedBox(height: 30),
-        const Text('Dashboard - Hoje', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
-        const SizedBox(height: 15),
-        
-        StreamBuilder<QuerySnapshot>(
-          stream: DatabaseService().getTodosOsCortes(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
-            DateTime inicioHoje = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-            var cortesHoje = snapshot.data!.docs.where((doc) {
-              var dados = doc.data() as Map<String, dynamic>? ?? {};
-              if (dados['data'] == null) return false;
-              return (dados['data'] as Timestamp).toDate().isAfter(inicioHoje) || (dados['data'] as Timestamp).toDate().isAtSameMomentAs(inicioHoje);
-            }).toList();
-
-            double lucroHoje = cortesHoje.fold(0, (s, doc) => s + (((doc.data() as Map)['valor'] ?? 0) as num).toDouble());
-
-            return Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade300)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Faturamento Bruto do Dia', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  Text('R\$ ${lucroHoje.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
-                  const SizedBox(height: 5),
-                  Text('${cortesHoje.length} serviços realizados hoje', style: const TextStyle(color: Colors.grey)),
-                ],
-              ),
-            );
-          },
+        // Relatórios
+        Container(
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE0E0E0))),
+          child: ExpansionTile(
+            title: const Text('Gerar Relatórios', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+            iconColor: const Color(0xFF1B1B1B),
+            collapsedIconColor: const Color(0xFF1B1B1B),
+            children: [
+              _buildBotao(context, 'Diário', 'Hoje', Icons.today),
+              _buildBotao(context, 'Semanal', 'Semana', Icons.calendar_view_week),
+              _buildBotao(context, 'Mensal', 'Mes', Icons.calendar_month),
+            ],
+          ),
         ),
       ],
     );
@@ -365,57 +497,15 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
 }
 
 // ==========================================
-// ABAS DE SERVIÇOS E FINANCEIRO (Permanecem idênticas ao arquivo antigo)
+// ABAS DE SERVIÇOS E FINANCEIRO
 // ==========================================
 class AbaServicos extends StatelessWidget {
   const AbaServicos({super.key});
 
-  void _mostrarDialog(BuildContext context, {String? id, String? nomeAtual, double? precoAtual, double? comissaoAtual}) {
-    final nomeC = TextEditingController(text: nomeAtual);
-    final precoC = TextEditingController(text: precoAtual?.toString());
-    final comissaoC = TextEditingController(text: comissaoAtual?.toString() ?? '0');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar', style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nomeC, decoration: const InputDecoration(labelText: 'Nome (Ex: Pomada)')),
-            const SizedBox(height: 10),
-            TextField(controller: precoC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Preço Cliente (R\$)')),
-            const SizedBox(height: 10),
-            TextField(controller: comissaoC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Comissão Barbeiro (R\$)')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-            onPressed: () {
-              double p = double.parse(precoC.text.replaceAll(',', '.'));
-              double c = double.parse(comissaoC.text.replaceAll(',', '.'));
-              if (id == null) DatabaseService().addServico(nomeC.text, p, c);
-              else DatabaseService().updateServico(id, nomeC.text, p, c);
-              Navigator.pop(context);
-            },
-            child: const Text('Salvar'),
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () => _mostrarDialog(context), child: const Icon(Icons.add, color: Colors.white)
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<QuerySnapshot>(
         stream: DatabaseService().getServicos(),
         builder: (context, snapshot) {
@@ -430,19 +520,20 @@ class AbaServicos extends StatelessWidget {
               var s = servicos[index];
               var d = s.data() as Map<String, dynamic>;
               double com = d.containsKey('comissao') ? (d['comissao'] as num).toDouble() : 0.0;
-              return Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
-                color: Colors.white,
-                margin: const EdgeInsets.only(bottom: 10),
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Text(d['nome'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Preço: R\$ ${(d['preco'] as num).toStringAsFixed(2)}${com > 0 ? ' | Com: R\$ $com' : ''}', style: const TextStyle(fontSize: 13)),
+                  subtitle: Text('Preço: R\$ ${(d['preco'] as num).toStringAsFixed(2)}${com > 0 ? ' | Com: R\$ $com' : ''}', style: const TextStyle(fontSize: 13, color: Color(0xFF737784))),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(icon: const Icon(Icons.edit, color: Colors.black54), onPressed: () => _mostrarDialog(context, id: s.id, nomeAtual: d['nome'], precoAtual: (d['preco'] as num).toDouble(), comissaoAtual: com)),
-                      IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent), onPressed: () => DatabaseService().deleteServico(s.id)),
+                      IconButton(icon: const Icon(Icons.edit, color: Color(0xFF737784)), onPressed: () => mostrarDialogServico(context, id: s.id, nomeAtual: d['nome'], precoAtual: (d['preco'] as num).toDouble(), comissaoAtual: com)),
+                      IconButton(icon: const Icon(Icons.delete, color: Color(0xFFBA1A1A)), onPressed: () => DatabaseService().deleteServico(s.id)),
                     ],
                   ),
                 ),
@@ -464,47 +555,10 @@ class AbaFinanceiro extends StatefulWidget {
 class _AbaFinanceiroState extends State<AbaFinanceiro> {
   String _filtroMes = 'Mês Atual';
 
-  void _mostrarDialog(BuildContext context) {
-    final descC = TextEditingController();
-    final valorC = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Lançar Despesa', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: descC, decoration: const InputDecoration(labelText: 'Descrição (Ex: Água, Luz)')),
-            const SizedBox(height: 10),
-            TextField(controller: valorC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Valor (R\$)')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-            onPressed: () {
-              double v = double.parse(valorC.text.replaceAll(',', '.'));
-              DatabaseService().registrarDespesaVale('Despesa da Loja', descC.text, v);
-              Navigator.pop(context);
-            },
-            child: const Text('Lançar'),
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () => _mostrarDialog(context), child: const Icon(Icons.add, color: Colors.white)
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           Container(
@@ -512,7 +566,7 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
             color: Colors.white,
             child: DropdownButtonFormField<String>(
               value: _filtroMes,
-              decoration: InputDecoration(labelText: 'Filtrar Lançamentos', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.grey[50]),
+              decoration: InputDecoration(labelText: 'Filtrar Lançamentos', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), filled: true, fillColor: const Color(0xFFF9F9F9)),
               items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
               onChanged: (v) => setState(() => _filtroMes = v!),
             ),
@@ -542,16 +596,17 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                   itemBuilder: (context, index) {
                     var d = itens[index].data() as Map<String, dynamic>;
                     DateTime data = (d['data'] as Timestamp?)?.toDate() ?? DateTime.now();
-                    return Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
-                      color: Colors.white,
-                      margin: const EdgeInsets.only(bottom: 10),
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+                      ),
                       child: ListTile(
-                        leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.money_off, color: Colors.white)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        leading: const Icon(Icons.receipt_long, color: Color(0xFF737784)),
                         title: Text('${d['descricao']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text("${data.day}/${data.month}/${data.year}", style: const TextStyle(fontSize: 12)),
-                        trailing: Text('- R\$ ${(d['valor'] as num).toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+                        subtitle: Text("${data.day}/${data.month}/${data.year}", style: const TextStyle(fontSize: 12, color: Color(0xFF737784))),
+                        trailing: Text('- R\$ ${(d['valor'] as num).toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     );
                   },

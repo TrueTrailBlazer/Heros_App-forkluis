@@ -31,53 +31,53 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Hé/Os Barbearia',
 
-      // --- TEMA MODERNO E ELEGANTE (PRETO, BRANCO E CINZA) ---
+      // --- NOVO TEMA STITCH (MINIMALISTA) ---
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
-        primaryColor: Colors.black,
-
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5), // bg-surface-background
+        primaryColor: const Color(0xFF0047AB), // primary-container (Azul Cobalto)
+        
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
+          backgroundColor: Color(0xFF1B1B1B), // bg-on-surface
           foregroundColor: Colors.white,
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
+          scrolledUnderElevation: 0,
+          titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.01),
         ),
 
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
+            backgroundColor: const Color(0xFF1B1B1B),
             foregroundColor: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                12,
-              ), // Bordas arredondadas nos botões
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           ),
         ),
 
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.grey),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.black, width: 2),
-          ),
+          fillColor: const Color(0xFFF9F9F9),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0047AB), width: 1.5)),
+          labelStyle: const TextStyle(color: Color(0xFF737784)),
         ),
 
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.black,
-          primary: Colors.black,
-          secondary: Colors.grey,
+          seedColor: const Color(0xFF0047AB),
+          primary: const Color(0xFF0047AB),
+          secondary: const Color(0xFF1B1B1B),
+          surface: const Color(0xFFF5F5F5),
+          onSurface: const Color(0xFF1B1B1B),
+          error: const Color(0xFFBA1A1A),
+        ),
+        
+        dividerTheme: const DividerThemeData(
+          color: Color(0xFFE0E0E0),
+          thickness: 1,
+          space: 1,
         ),
       ),
 

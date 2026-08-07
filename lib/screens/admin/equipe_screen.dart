@@ -8,99 +8,91 @@ class EquipeScreen extends StatefulWidget {
   State<EquipeScreen> createState() => _EquipeScreenState();
 }
 
-class _EquipeScreenState extends State<EquipeScreen> {
-  bool _isCreatingUser = false;
+bool _isCreatingUserEquipeGlobal = false;
 
-  void _mostrarDialogGerenciar(BuildContext context, {String? id, String? nomeAtual, String? diaPagAtual}) {
-    final nomeC = TextEditingController(text: nomeAtual);
-    final emailC = TextEditingController();
-    final senhaC = TextEditingController();
-    String diaPagamento = diaPagAtual ?? 'Sábado';
+void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nomeAtual, String? diaPagAtual}) {
+  final nomeC = TextEditingController(text: nomeAtual);
+  final emailC = TextEditingController();
+  final senhaC = TextEditingController();
+  String diaPagamento = diaPagAtual ?? 'Sábado';
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setStateLocal) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(id == null ? 'Novo Barbeiro' : 'Editar Barbeiro', style: const TextStyle(fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nomeC, decoration: const InputDecoration(labelText: 'Nome do Barbeiro')),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<String>(
-                  // Correção do aviso amarelo: usando initialValue ao invés de value
-                  initialValue: diaPagamento, 
-                  decoration: InputDecoration(labelText: 'Dia de Fechar Caixa', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                  items: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-                  onChanged: (v) => setStateLocal(() => diaPagamento = v!),
-                ),
-                
-                // Exibir e-mail e senha apenas na criação, não na edição
-                if (id == null) ...[
-                  const Divider(height: 30),
-                  const Text('Criar Acesso (Login)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
-                  TextField(controller: emailC, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'E-mail do barbeiro')),
-                  const SizedBox(height: 10),
-                  TextField(controller: senhaC, obscureText: true, decoration: const InputDecoration(labelText: 'Senha (mínimo 6 num.)')),
-                ]
-              ],
-            ),
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setStateLocal) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(id == null ? 'Novo Barbeiro' : 'Editar Barbeiro', style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nomeC, decoration: const InputDecoration(labelText: 'Nome do Barbeiro')),
+              const SizedBox(height: 15),
+              DropdownButtonFormField<String>(
+                initialValue: diaPagamento, 
+                decoration: InputDecoration(labelText: 'Dia de Fechar Caixa', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                items: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                onChanged: (v) => setStateLocal(() => diaPagamento = v!),
+              ),
+              if (id == null) ...[
+                const Divider(height: 30),
+                const Text('Criar Acesso (Login)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 10),
+                TextField(controller: emailC, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'E-mail do barbeiro')),
+                const SizedBox(height: 10),
+                TextField(controller: senhaC, obscureText: true, decoration: const InputDecoration(labelText: 'Senha (mínimo 6 num.)')),
+              ]
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: _isCreatingUser ? null : () => Navigator.pop(context), 
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey))
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-              onPressed: _isCreatingUser ? null : () async {
-                if (nomeC.text.trim().isEmpty) return;
-                
-                setStateLocal(() => _isCreatingUser = true);
-
-                if (id == null) {
-                  // Manda criar no Authentication usando a FUNÇÃO NOVA
-                  if (emailC.text.isEmpty || senhaC.text.length < 6) {
-                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email inválido ou senha muito curta (mín. 6).')));
-                     setStateLocal(() => _isCreatingUser = false);
-                     return;
-                  }
-                  String? erro = await DatabaseService().criarBarbeiroComLogin(nomeC.text.trim(), diaPagamento, emailC.text.trim(), senhaC.text.trim());
-                  if (erro != null) {
-                     if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $erro')));
-                     setStateLocal(() => _isCreatingUser = false);
-                     return;
-                  }
-                } else {
-                  // Apenas atualiza
-                  await DatabaseService().updateBarbeiro(id, nomeC.text.trim(), diaPagamento);
-                }
-                
-                setStateLocal(() => _isCreatingUser = false);
-                if(mounted) Navigator.pop(context);
-              },
-              child: _isCreatingUser ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Salvar'),
-            )
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: _isCreatingUserEquipeGlobal ? null : () => Navigator.pop(context), 
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey))
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
+            onPressed: _isCreatingUserEquipeGlobal ? null : () async {
+              if (nomeC.text.trim().isEmpty) return;
+              
+              setStateLocal(() => _isCreatingUserEquipeGlobal = true);
+
+              if (id == null) {
+                if (emailC.text.isEmpty || senhaC.text.length < 6) {
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email inválido ou senha muito curta (mín. 6).')));
+                   setStateLocal(() => _isCreatingUserEquipeGlobal = false);
+                   return;
+                }
+                String? erro = await DatabaseService().criarBarbeiroComLogin(nomeC.text.trim(), diaPagamento, emailC.text.trim(), senhaC.text.trim());
+                if (erro != null) {
+                   if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $erro')));
+                   setStateLocal(() => _isCreatingUserEquipeGlobal = false);
+                   return;
+                }
+              } else {
+                await DatabaseService().updateBarbeiro(id, nomeC.text.trim(), diaPagamento);
+              }
+              
+              setStateLocal(() => _isCreatingUserEquipeGlobal = false);
+              if(context.mounted) Navigator.pop(context);
+            },
+            child: _isCreatingUserEquipeGlobal ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Salvar'),
+          )
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _EquipeScreenState extends State<EquipeScreen> {
+  // state fields
+  bool _isCreatingUser = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () => _mostrarDialogGerenciar(context),
-        child: const Icon(Icons.person_add, color: Colors.white),
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<QuerySnapshot>(
         stream: DatabaseService().getBarbeiros(),
         builder: (context, snapshot) {
@@ -139,7 +131,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                           icon: const Icon(Icons.monetization_on, color: Colors.green, size: 28),
                           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
                         ),
-                        IconButton(icon: const Icon(Icons.edit, color: Colors.black54), onPressed: () => _mostrarDialogGerenciar(context, id: b.id, nomeAtual: nome, diaPagAtual: diaPag)),
+                        IconButton(icon: const Icon(Icons.edit, color: Colors.black54), onPressed: () => mostrarDialogGerenciarEquipe(context, id: b.id, nomeAtual: nome, diaPagAtual: diaPag)),
                         IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent), onPressed: () => DatabaseService().deleteBarbeiro(b.id)),
                       ],
                     ),
