@@ -146,7 +146,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildTabItem({required IconData icon, required String label, required int index}) {
+  Widget _buildTabItem({required IconData iconOutline, required IconData iconFilled, required String label, required int index}) {
     bool isSelected = _abaAtual == index;
     return InkWell(
       onTap: () => setState(() => _abaAtual = index),
@@ -154,7 +154,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784)),
+          Icon(isSelected ? iconFilled : iconOutline, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784)),
           Text(label, style: TextStyle(fontSize: 12, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
