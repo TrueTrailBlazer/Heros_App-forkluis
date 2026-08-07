@@ -91,35 +91,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void _abrirMenuCentral(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          border: Border(top: BorderSide(color: Color(0xFF1B1B1B), width: 2)),
+        ),
+        child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE0E0E0), borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              const Text('O que você deseja adicionar?', style: TextStyle(color: Color(0xFF737784), fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              ListTile(
-                leading: const Icon(Icons.content_cut, color: Color(0xFF0047AB)),
-                title: const Text('Novo Serviço', style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () { Navigator.pop(context); mostrarDialogServico(context); },
+              const SizedBox(height: 12),
+              Container(width: 40, height: 6, decoration: BoxDecoration(color: const Color(0xFFCFC4C5), borderRadius: BorderRadius.circular(3))),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
+                child: const Text('O QUE VOCÊ DESEJA ADICIONAR?', style: TextStyle(color: Color(0xFF737784), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
               ),
-              ListTile(
-                leading: const Icon(Icons.payments_outlined, color: Color(0xFF0047AB)),
-                title: const Text('Nova Despesa', style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () { Navigator.pop(context); mostrarDialogDespesa(context); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_add_alt_1, color: Color(0xFF0047AB)),
-                title: const Text('Novo Barbeiro', style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); },
-              ),
+              _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, () { Navigator.pop(context); mostrarDialogServico(context); }),
+              _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, () { Navigator.pop(context); mostrarDialogDespesa(context); }),
+              _buildMenuItem(context, 'Novo Barbeiro', Icons.person_add, () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); }, isLast: true),
+              const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(BuildContext context, String title, IconData icon, VoidCallback onTap, {bool isLast = false}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF2559BD), size: 32),
+            const SizedBox(width: 16),
+            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B)))),
+            const Icon(Icons.arrow_forward, color: Color(0xFFCFC4C5)),
+          ],
         ),
       ),
     );
@@ -513,32 +529,58 @@ class AbaServicos extends StatelessWidget {
           var servicos = snapshot.data!.docs;
           if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço.', style: TextStyle(color: Colors.grey)));
 
-          return ListView.builder(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            itemCount: servicos.length,
-            itemBuilder: (context, index) {
-              var s = servicos[index];
-              var d = s.data() as Map<String, dynamic>;
-              double com = d.containsKey('comissao') ? (d['comissao'] as num).toDouble() : 0.0;
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  title: Text(d['nome'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Preço: R\$ ${(d['preco'] as num).toStringAsFixed(2)}${com > 0 ? ' | Com: R\$ $com' : ''}', style: const TextStyle(fontSize: 13, color: Color(0xFF737784))),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(icon: const Icon(Icons.edit, color: Color(0xFF737784)), onPressed: () => mostrarDialogServico(context, id: s.id, nomeAtual: d['nome'], precoAtual: (d['preco'] as num).toDouble(), comissaoAtual: com)),
-                      IconButton(icon: const Icon(Icons.delete, color: Color(0xFFBA1A1A)), onPressed: () => DatabaseService().deleteServico(s.id)),
-                    ],
-                  ),
-                ),
-              );
-            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: servicos.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                itemBuilder: (context, index) {
+                  var s = servicos[index];
+                  var d = s.data() as Map<String, dynamic>;
+                  double com = d.containsKey('comissao') ? (d['comissao'] as num).toDouble() : 0.0;
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(d['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                              const SizedBox(height: 4),
+                              Text('R\$ ${(d['preco'] as num).toStringAsFixed(2)}${com > 0 ? ' (Comissão: R\$ $com)' : ''}', style: const TextStyle(fontSize: 14, color: Color(0xFF737784))),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: () => mostrarDialogServico(context, id: s.id, nomeAtual: d['nome'], precoAtual: (d['preco'] as num).toDouble(), comissaoAtual: com),
+                              child: const Icon(Icons.edit, color: Color(0xFF737784)),
+                            ),
+                            const SizedBox(width: 16),
+                            InkWell(
+                              onTap: () => DatabaseService().deleteServico(s.id),
+                              child: const Icon(Icons.delete, color: Color(0xFFB22222)),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           );
         },
       ),
@@ -561,14 +603,26 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: DropdownButtonFormField<String>(
-              value: _filtroMes,
-              decoration: InputDecoration(labelText: 'Filtrar Lançamentos', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), filled: true, fillColor: const Color(0xFFF9F9F9)),
-              items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
-              onChanged: (v) => setState(() => _filtroMes = v!),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                width: 200,
+                child: DropdownButtonFormField<String>(
+                  value: _filtroMes,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.expand_more, color: Color(0xFF737784)),
+                  items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.normal, color: Color(0xFF1B1B1B))))).toList(),
+                  onChanged: (v) => setState(() => _filtroMes = v!),
+                ),
+              ),
             ),
           ),
           Expanded(
@@ -590,26 +644,48 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
 
                 if (itens.isEmpty) return const Center(child: Text('Nenhuma despesa.', style: TextStyle(color: Colors.grey)));
 
-                return ListView.builder(
+                return SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
-                  itemCount: itens.length,
-                  itemBuilder: (context, index) {
-                    var d = itens[index].data() as Map<String, dynamic>;
-                    DateTime data = (d['data'] as Timestamp?)?.toDate() ?? DateTime.now();
-                    return Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        leading: const Icon(Icons.receipt_long, color: Color(0xFF737784)),
-                        title: Text('${d['descricao']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text("${data.day}/${data.month}/${data.year}", style: const TextStyle(fontSize: 12, color: Color(0xFF737784))),
-                        trailing: Text('- R\$ ${(d['valor'] as num).toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                    );
-                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: itens.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                      itemBuilder: (context, index) {
+                        var d = itens[index].data() as Map<String, dynamic>;
+                        DateTime data = (d['data'] as Timestamp?)?.toDate() ?? DateTime.now();
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.receipt_long, color: Color(0xFF737784)),
+                                  const SizedBox(width: 16),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('${d['descricao']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                      const SizedBox(height: 4),
+                                      Text('${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}', style: const TextStyle(fontSize: 12, color: Color(0xFF737784))),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Text('- R\$ ${(d['valor'] as num).toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFFB22222), fontWeight: FontWeight.bold, fontSize: 18)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 );
               },
             ),

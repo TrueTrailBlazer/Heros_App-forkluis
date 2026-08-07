@@ -98,47 +98,98 @@ class _EquipeScreenState extends State<EquipeScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
           var barbeiros = snapshot.data!.docs;
-          if (barbeiros.isEmpty) return const Center(child: Text('Nenhum barbeiro cadastrado.', style: TextStyle(color: Colors.grey)));
+          if (barbeiros.isEmpty) return const Center(child: Text('Nenhum membro na equipe.', style: TextStyle(color: Colors.grey)));
 
-          return ListView.builder(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            itemCount: barbeiros.length,
-            itemBuilder: (context, index) {
-              var b = barbeiros[index];
-              var dados = b.data() as Map<String, dynamic>? ?? {};
-              String nome = dados.containsKey('nome') ? dados['nome'] : 'Sem Nome';
-              String diaPag = dados.containsKey('diaPagamento') ? dados['diaPagamento'] : 'Sábado';
-
-              return Card(
-                elevation: 0,
+            child: Container(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
-                margin: const EdgeInsets.only(bottom: 10),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.person, color: Colors.white),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: barbeiros.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                itemBuilder: (context, index) {
+                  var b = barbeiros[index];
+                  var d = b.data() as Map<String, dynamic>;
+                  String nome = d['nome'] ?? 'Sem nome';
+                  String diaPag = d['diaPagamento'] ?? 'Não definido';
+                  
+                  return InkWell(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1B1B1B),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    nome.isNotEmpty ? nome[0].toUpperCase() : '?',
+                                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                  const SizedBox(height: 4),
+                                  Text('Acerto: $diaPag', style: const TextStyle(fontSize: 14, color: Color(0xFF737784))),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                onTap: () => mostrarDialogGerenciarEquipe(context, id: b.id, nomeAtual: nome, diaPagAtual: diaPag),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.edit, color: Color(0xFF737784), size: 20),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: () => DatabaseService().deleteBarbeiro(b.id),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.delete, color: Color(0xFFB22222), size: 20),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    title: Text(nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    subtitle: Text('Acerto: $diaPag', style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.monetization_on, color: Colors.green, size: 28),
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
-                        ),
-                        IconButton(icon: const Icon(Icons.edit, color: Colors.black54), onPressed: () => mostrarDialogGerenciarEquipe(context, id: b.id, nomeAtual: nome, diaPagAtual: diaPag)),
-                        IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent), onPressed: () => DatabaseService().deleteBarbeiro(b.id)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           );
         },
       ),
