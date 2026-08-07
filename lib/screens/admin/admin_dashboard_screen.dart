@@ -178,10 +178,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       body: Stack(
         children: [
-          // Conteúdo Principal com espaço embaixo para não ser coberto pela navbar
-          Padding(
-            padding: const EdgeInsets.only(bottom: 64),
-            child: abas[_abaAtual],
+          // Conteúdo Principal preenchendo toda a tela, com espaço embaixo para não ser coberto pela navbar
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 64),
+              child: abas[_abaAtual],
+            ),
           ),
           // HUD de botões Customizado na base
           Positioned(
@@ -208,7 +210,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           // Botão FAB Flutuante Posicionado
           Positioned(
-            bottom: 32, // Fica perfeitamente no meio da linha do nav bar (32px pra dentro, 24px pra fora)
+            bottom: 16, // Fica mais para dentro do nav bar, saltando levemente para fora
             left: 0,
             right: 0,
             child: Center(
@@ -380,15 +382,20 @@ class AbaRelatorios extends StatelessWidget {
         // Relatórios
         Container(
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE0E0E0))),
-          child: ExpansionTile(
-            title: const Text('Gerar Relatórios', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-            iconColor: const Color(0xFF1B1B1B),
-            collapsedIconColor: const Color(0xFF1B1B1B),
-            children: [
-              _buildBotao(context, 'Diário', 'Hoje', Icons.today),
-              _buildBotao(context, 'Semanal', 'Semana', Icons.calendar_view_week),
-              _buildBotao(context, 'Mensal', 'Mes', Icons.calendar_month),
-            ],
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: const Text('Gerar Relatórios', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+              iconColor: const Color(0xFF1B1B1B),
+              collapsedIconColor: const Color(0xFF1B1B1B),
+              children: [
+                _buildBotao(context, 'Diário', 'Hoje', Icons.today),
+                _buildBotao(context, 'Semanal', 'Semana', Icons.calendar_view_week),
+                _buildBotao(context, 'Mensal', 'Mes', Icons.calendar_month),
+              ],
+            ),
           ),
         ),
       ],
