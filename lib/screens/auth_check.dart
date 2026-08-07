@@ -22,7 +22,9 @@ class _AuthCheckState extends State<AuthCheck> {
   @override
   void initState() {
     super.initState();
-    _verificarAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarAuth();
+    });
   }
 
   Future<void> _verificarAuth() async {
