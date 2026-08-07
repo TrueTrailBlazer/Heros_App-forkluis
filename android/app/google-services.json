@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "976213551876",
+    "project_id": "heros-barber",
+    "storage_bucket": "heros-barber.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976213551876:android:c09f0d2a51c8450e68fe51",
+        "android_client_info": {
+          "package_name": "com.example.heros_b"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJWXtEdNvCCTflBGy41f6LvrhsMiD38v4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
