@@ -91,9 +91,9 @@ class _EquipeScreenState extends State<EquipeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: StreamBuilder<QuerySnapshot>(
+    return Container(
+      color: const Color(0xFFF5F5F5),
+      child: StreamBuilder<QuerySnapshot>(
         stream: DatabaseService().getBarbeiros(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));

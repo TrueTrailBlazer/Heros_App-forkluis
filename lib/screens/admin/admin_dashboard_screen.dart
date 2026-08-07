@@ -112,9 +112,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
                 child: const Text('O QUE VOCÊ DESEJA ADICIONAR?', style: TextStyle(color: Color(0xFF737784), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
               ),
-              _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, () { Navigator.pop(context); mostrarDialogServico(context); }),
-              _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, () { Navigator.pop(context); mostrarDialogDespesa(context); }),
-              _buildMenuItem(context, 'Novo Barbeiro', Icons.person_add, () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); }, isLast: true),
+              _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, const Color(0xFF2559BD), () { Navigator.pop(context); mostrarDialogServico(context); }),
+              _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, const Color(0xFFB22222), () { Navigator.pop(context); mostrarDialogDespesa(context); }),
+              _buildMenuItem(context, 'Novo Barbeiro', Icons.person_add, const Color(0xFF2E4A35), () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); }, isLast: true),
               const SizedBox(height: 24),
             ],
           ),
@@ -123,7 +123,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, String title, IconData icon, VoidCallback onTap, {bool isLast = false}) {
+  Widget _buildMenuItem(BuildContext context, String title, IconData icon, Color iconColor, VoidCallback onTap, {bool isLast = false}) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -131,7 +131,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF2559BD), size: 32),
+            Icon(icon, color: iconColor, size: 32),
             const SizedBox(width: 16),
             Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B)))),
             const Icon(Icons.arrow_forward, color: Color(0xFFCFC4C5)),
@@ -162,37 +162,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final List<Widget> abas = [const AbaRelatorios(), const AbaServicos(), const AbaFinanceiro(), const EquipeScreen()];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: const Color(0xFFF5F5F5), // surface-background do Stitch
       appBar: AppBar(
-        title: const Text("Hero's Barbearia"),
+        backgroundColor: const Color(0xFF1B1B1B),
+        foregroundColor: Colors.white,
+        title: const Text("Hero's Barbearia", style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: () async { await authService.logout(); if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())); })
+          IconButton(icon: const Icon(Icons.logout, color: Colors.white), onPressed: () async { await authService.logout(); if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())); })
         ],
       ),
       body: abas[_abaAtual],
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1B1B1B),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        onPressed: () => _abrirMenuCentral(context),
-        child: const Icon(Icons.add, size: 32),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(top: 20), // empurra o botão levemente para baixo
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF1B1B1B),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          onPressed: () => _abrirMenuCentral(context),
+          child: const Icon(Icons.add, size: 32),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+        elevation: 8,
+        padding: EdgeInsets.zero,
         child: SizedBox(
-          height: 60,
+          height: 64, // altura fixa do menu
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTabItem(icon: Icons.analytics_outlined, label: 'Relat.', index: 0),
+              _buildTabItem(icon: Icons.analytics, label: 'Relat.', index: 0),
               _buildTabItem(icon: Icons.content_cut, label: 'Serviços', index: 1),
-              const SizedBox(width: 48), // Spacing for FAB
-              _buildTabItem(icon: Icons.payments_outlined, label: 'Despesas', index: 2),
-              _buildTabItem(icon: Icons.groups_outlined, label: 'Equipe', index: 3),
+              const SizedBox(width: 48), // Espaço para o FAB
+              _buildTabItem(icon: Icons.payments, label: 'Despesas', index: 2),
+              _buildTabItem(icon: Icons.groups, label: 'Equipe', index: 3),
             ],
           ),
         ),
@@ -520,9 +525,9 @@ class AbaServicos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: StreamBuilder<QuerySnapshot>(
+    return Container(
+      color: const Color(0xFFF5F5F5),
+      child: StreamBuilder<QuerySnapshot>(
         stream: DatabaseService().getServicos(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
@@ -599,28 +604,33 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Column(
+    return Container(
+      color: const Color(0xFFF5F5F5),
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: SizedBox(
+              child: Container(
                 width: 200,
-                child: DropdownButtonFormField<String>(
-                  value: _filtroMes,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                    filled: true,
-                    fillColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _filtroMes,
+                    isExpanded: true,
+                    icon: const Icon(Icons.expand_more, color: Color(0xFF737784)),
+                    focusColor: Colors.transparent, // Remove as linhas pretas de foco
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.normal, color: Color(0xFF1B1B1B))))).toList(),
+                    onChanged: (v) => setState(() => _filtroMes = v!),
                   ),
-                  icon: const Icon(Icons.expand_more, color: Color(0xFF737784)),
-                  items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.normal, color: Color(0xFF1B1B1B))))).toList(),
-                  onChanged: (v) => setState(() => _filtroMes = v!),
                 ),
               ),
             ),
