@@ -21,8 +21,10 @@ void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nom
     barrierDismissible: false,
     builder: (context) => StatefulBuilder(
       builder: (context, setStateLocal) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(id == null ? 'Novo Barbeiro' : 'Editar Barbeiro', style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
+        title: Text(id == null ? 'Novo Barbeiro' : 'Editar Barbeiro', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -48,8 +50,8 @@ void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nom
         ),
         actions: [
           TextButton(
-            onPressed: _isCreatingUserEquipeGlobal ? null : () => Navigator.pop(context), 
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey))
+            onPressed: _isCreatingUserEquipeGlobal ? null : () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),

@@ -19,8 +19,10 @@ void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, 
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar', style: const TextStyle(fontWeight: FontWeight.bold)),
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
+      title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar Serviço', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -32,7 +34,7 @@ void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, 
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
         ElevatedButton(
           onPressed: () {
             double p = double.tryParse(precoC.text.replaceAll(',', '.')) ?? 0;
@@ -54,8 +56,10 @@ void mostrarDialogDespesa(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      title: const Text('Lançar Despesa', style: TextStyle(fontWeight: FontWeight.bold)),
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
+      title: const Text('Nova Despesa', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -65,14 +69,15 @@ void mostrarDialogDespesa(BuildContext context) {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB22222)), // botão de despesa em vermelho
           onPressed: () {
             double v = double.tryParse(valorC.text.replaceAll(',', '.')) ?? 0;
             DatabaseService().registrarDespesaVale('Despesa da Loja', descC.text, v);
             Navigator.pop(context);
           },
-          child: const Text('Lançar'),
+          child: const Text('Lançar Despesa'),
         )
       ],
     ),
@@ -192,11 +197,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildTabItem(icon: Icons.analytics, label: 'Relat.', index: 0),
-                  _buildTabItem(icon: Icons.content_cut, label: 'Serviços', index: 1),
+                  _buildTabItem(iconOutline: Icons.analytics_outlined, iconFilled: Icons.analytics, label: 'Relat.', index: 0),
+                  _buildTabItem(iconOutline: Icons.content_cut, iconFilled: Icons.content_cut, label: 'Serviços', index: 1),
                   const SizedBox(width: 64), // Espaço para o FAB
-                  _buildTabItem(icon: Icons.payments, label: 'Despesas', index: 2),
-                  _buildTabItem(icon: Icons.groups, label: 'Equipe', index: 3),
+                  _buildTabItem(iconOutline: Icons.payments_outlined, iconFilled: Icons.payments, label: 'Despesas', index: 2),
+                  _buildTabItem(iconOutline: Icons.groups_outlined, iconFilled: Icons.groups, label: 'Equipe', index: 3),
                 ],
               ),
             ),
