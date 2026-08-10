@@ -18,6 +18,13 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
   final List<Map<String, dynamic>> _servicosSelecionados = [];
   String _formaPagamento = 'PIX';
   bool _salvando = false;
+  late final Stream<List<ServicoModel>> _servicosStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _servicosStream = _db.getServicos();
+  }
 
   double get _valorTotal => _servicosSelecionados.fold(0, (sum, item) => sum + (item['preco'] as num).toDouble());
   double get _comissaoExtra => _servicosSelecionados.fold(0, (sum, item) => sum + (item['comissao'] as num).toDouble());
@@ -224,7 +231,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
         ],
       ),
       body: StreamBuilder<List<ServicoModel>>(
-        stream: _db.getServicos(),
+        stream: _servicosStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
