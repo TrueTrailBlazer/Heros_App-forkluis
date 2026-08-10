@@ -50,10 +50,185 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
       _servicosSelecionados.clear();
       _salvando = false;
     });
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../models/servico_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/database_service.dart';
+import '../auth/login_screen.dart';
+import '../../utils/formatters.dart';
+
+class BarbeiroHomeScreen extends StatefulWidget {
+  const BarbeiroHomeScreen({super.key});
+
+  @override
+  State<BarbeiroHomeScreen> createState() => _BarbeiroHomeScreenState();
+}
+
+class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
+  final DatabaseService _db = DatabaseService();
+  final List<Map<String, dynamic>> _servicosSelecionados = [];
+  String _formaPagamento = 'PIX';
+  bool _salvando = false;
+
+  double get _valorTotal => _servicosSelecionados.fold(0, (sum, item) => sum + (item['preco'] as num).toDouble());
+  double get _comissaoExtra => _servicosSelecionados.fold(0, (sum, item) => sum + (item['comissao'] as num).toDouble());
+
+  void _adicionarServico(String nome, double preco, double comissao) {
+    setState(() => _servicosSelecionados.add({'nome': nome, 'preco': preco, 'comissao': comissao}));
+  }
+
+  void _removerServico(int index) {
+    setState(() => _servicosSelecionados.removeAt(index));
+  }
+
+  void _finalizarAtendimento() async {
+    if (_servicosSelecionados.isEmpty) return;
+    setState(() => _salvando = true);
+
+    final auth = Provider.of<AuthService>(context, listen: false);
+    List<String> nomesServicos = _servicosSelecionados.map((s) => s['nome'].toString()).toList();
+
+    await _db.registrarCorte(
+      barbeiroNome: auth.usuarioAtual?.nome ?? 'Barbeiro',
+      barbeiroId: auth.usuarioAtual?.id ?? '',
+      servicosFeitos: nomesServicos,
+      valorTotal: _valorTotal,
+      comissaoProdutos: _comissaoExtra,
+      formaPagamento: _formaPagamento,
+    );
+
+    setState(() {
+      _servicosSelecionados.clear();
+      _salvando = false;
+    });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Atendimento finalizado!'), backgroundColor: Colors.black));
     }
+  }
+
+  void _abrirCarrinhoBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(width: 40, height: 6, decoration: BoxDecoration(color: const Color(0xFFCFC4C5), borderRadius: BorderRadius.circular(3))),
+                  const SizedBox(height: 16),
+                  const Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF737784), letterSpacing: 1.2)),
+                  const SizedBox(height: 16),
+                  if (_servicosSelecionados.isEmpty)
+                    const Padding(padding: EdgeInsets.all(24.0), child: Text('O carrinho está vazio.', style: TextStyle(color: Color(0xFF737784))))
+                  else
+                    Container(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _servicosSelecionados.length,
+                        separatorBuilder: (context, index) => const Divider(height: 16, color: Color(0xFFE0E0E0)),
+                        itemBuilder: (context, index) {
+                          var item = _servicosSelecionados[index];
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text(item['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF1B1B1B)), overflow: TextOverflow.ellipsis)),
+                              Row(
+                                children: [
+                                  Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      _removerServico(index);
+                                      setModalState(() {});
+                                      if (_servicosSelecionados.isEmpty) Navigator.pop(context);
+                                    },
+                                    child: const Padding(padding: EdgeInsets.all(4.0), child: Icon(Icons.remove_circle_outline, color: Color(0xFFB22222), size: 26)),
+                                  )
+                                ],
+                              )
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  if (_servicosSelecionados.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF9F9F9),
+                        border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF737784), letterSpacing: 1.2)),
+                              Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _formaPagamento,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
+                            items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
+                            onChanged: (v) {
+                              _formaPagamento = v!;
+                              setModalState(() {});
+                              setState(() {});
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _salvando ? null : () {
+                                Navigator.pop(context);
+                                _finalizarAtendimento();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1B1B1B),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: _salvando 
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  ]
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -81,7 +256,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                 builder: (context) => AlertDialog(
                   backgroundColor: Colors.white,
                   title: const Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-                  content: const Text('Tem certeza que deseja sair do aplicativo?', style: TextStyle(color: Color(0xFF737784))),
+                  content: const Text('Tem certeza que deseja sair da sua conta?', style: TextStyle(color: Color(0xFF737784))),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
                     ElevatedButton(
@@ -100,152 +275,74 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           )
         ],
       ),
-      body: Column(
-        children: [
-          // LISTA DE SERVIÇOS
-          Expanded(
-            child: StreamBuilder<List<ServicoModel>>(
-              stream: _db.getServicos(),
-              builder: (context, snapshot) {
-            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
-            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
-                final servicos = snapshot.data!;
-                
-                if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço cadastrado.', style: TextStyle(color: Colors.grey)));
+      body: StreamBuilder<List<ServicoModel>>(
+        stream: _db.getServicos(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
+          final servicos = snapshot.data!;
+          
+          if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço cadastrado.', style: TextStyle(color: Colors.grey)));
 
-                return Container(
-                  color: Colors.white,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(0),
-                    itemCount: servicos.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
-                    itemBuilder: (context, index) {
-                      var servico = servicos[index];
-                      double comissao = servico.comissao;
-                      
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        title: Text(servico.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
-                        subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
-                        trailing: GestureDetector(behavior: HitTestBehavior.opaque,
-                          onTap: () => _adicionarServico(servico.nome, servico.preco, comissao),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.add, color: Color(0xFF1B1B1B), size: 20),
-                          ),
-                        ),
-                      );
-                    },
+          return ListView.separated(
+            padding: EdgeInsets.only(bottom: _servicosSelecionados.isNotEmpty ? 100 : 20),
+            itemCount: servicos.length,
+            separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+            itemBuilder: (context, index) {
+              var servico = servicos[index];
+              double comissao = servico.comissao;
+              
+              return Container(
+                color: Colors.white,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  title: Text(servico.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                  subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
+                  trailing: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _adicionarServico(servico.nome, servico.preco, comissao),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.add, color: Color(0xFF1B1B1B), size: 20),
+                    ),
                   ),
-                );
-              },
+                ),
+              );
+            },
+          );
+        },
+      ),
+      bottomNavigationBar: _servicosSelecionados.isEmpty ? null : GestureDetector(
+        onTap: _abrirCarrinhoBottomSheet,
+        child: Container(
+          color: const Color(0xFF1B1B1B),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${_servicosSelecionados.length} Iten${_servicosSelecionados.length > 1 ? 's' : ''}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+                Row(
+                  children: const [
+                    Text('Ver Carrinho', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    SizedBox(width: 8),
+                    Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                  ],
+                )
+              ],
             ),
           ),
-                    // CARRINHO DE COMPRAS
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12.0),
-                    child: Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF737784), letterSpacing: 1.2)),
-                  ),
-                  if (_servicosSelecionados.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 16.0),
-                      child: Text('Nenhum serviço adicionado.', style: TextStyle(color: Color(0xFF737784))),
-                    )
-                  else
-                    Container(
-                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.25),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _servicosSelecionados.length,
-                        separatorBuilder: (context, index) => const Divider(height: 12, color: Colors.transparent),
-                        itemBuilder: (context, index) {
-                          var item = _servicosSelecionados[index];
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(child: Text(item['nome'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1B1B1B)), overflow: TextOverflow.ellipsis)),
-                              Row(
-                                children: [
-                                  Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _removerServico(index),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Icon(Icons.remove_circle_outline, color: Color(0xFFB22222), size: 24),
-                                    ),
-                                  )
-                                ],
-                              )
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  // PAGAMENTO
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF737784), letterSpacing: 1.2)),
-                            Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          value: _formaPagamento,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                            filled: true,
-                            fillColor: const Color(0xFFF5F5F5),
-                          ),
-                          items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
-                          onChanged: (v) => setState(() => _formaPagamento = v!),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: (_servicosSelecionados.isEmpty || _salvando) ? null : _finalizarAtendimento,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1B1B1B),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: _salvando 
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
