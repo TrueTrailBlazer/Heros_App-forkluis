@@ -128,31 +128,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildTabItem(iconOutline: Icons.analytics_outlined, iconFilled: Icons.analytics, label: 'Relat.', index: 0),
-                  _buildTabItem(iconOutline: Icons.design_services_outlined, iconFilled: Icons.design_services, label: 'Serviços', index: 1),
-                  const SizedBox(width: 64), // Espaço para o FAB
-                  _buildTabItem(iconOutline: Icons.payments_outlined, iconFilled: Icons.payments, label: 'Despesas', index: 2),
-                  _buildTabItem(iconOutline: Icons.groups_outlined, iconFilled: Icons.groups, label: 'Equipe', index: 3),
+                  Expanded(child: _buildTabItem(iconOutline: Icons.analytics_outlined, iconFilled: Icons.analytics, label: 'Relat.', index: 0)),
+                  Expanded(child: _buildTabItem(iconOutline: Icons.design_services_outlined, iconFilled: Icons.design_services, label: 'Serviços', index: 1)),
+                  const Expanded(child: SizedBox()), // Espaço para o FAB no meio exato
+                  Expanded(child: _buildTabItem(iconOutline: Icons.payments_outlined, iconFilled: Icons.payments, label: 'Despesas', index: 2)),
+                  Expanded(child: _buildTabItem(iconOutline: Icons.groups_outlined, iconFilled: Icons.groups, label: 'Equipe', index: 3)),
                 ],
               ),
             ),
           ),
           // Botão FAB Flutuante Posicionado
           Positioned(
-            bottom: 16, // Fica mais para dentro do nav bar, saltando levemente para fora
+            bottom: 20, // Fica mais para dentro do nav bar, saltando levemente para fora
             left: 0,
             right: 0,
             child: Center(
               child: SizedBox(
-                width: 56,
-                height: 56,
+                width: 64,
+                height: 64,
                 child: FloatingActionButton(
                   backgroundColor: const Color(0xFF1B1B1B),
                   foregroundColor: Colors.white,
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                   onPressed: () => _abrirMenuCentral(context),
                   child: const Icon(Icons.add, size: 32),
                 ),
@@ -389,7 +388,7 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1B1B1B),
         foregroundColor: Colors.white,
-        title: Text('Relatório ${widget.titulo}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Relatório ${widget.titulo}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
       ),
       body: StreamBuilder<List<CorteModel>>(
         stream: _db.getTodosOsCortes(),
