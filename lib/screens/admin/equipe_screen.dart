@@ -43,7 +43,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                   String nome = barbeiro.nome;
                   String diaPag = barbeiro.diaPagamento ?? 'Sábado';
                   
-                  return InkWell(
+                  return GestureDetector(behavior: HitTestBehavior.opaque,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -80,7 +80,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              InkWell(
+                              GestureDetector(behavior: HitTestBehavior.opaque,
                                 onTap: () => mostrarDialogGerenciarEquipe(context, id: barbeiro.id, nomeAtual: nome, diaPagAtual: diaPag),
                                 child: Container(
                                   width: 40,
@@ -93,7 +93,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              InkWell(
+                              GestureDetector(behavior: HitTestBehavior.opaque,
                                 onTap: () {
                                   showDialog(
                                     context: context,
@@ -277,3 +277,4 @@ class AcertoBarbeiroScreen extends StatelessWidget {
     );
   }
 }
+

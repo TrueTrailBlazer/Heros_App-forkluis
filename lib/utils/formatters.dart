@@ -19,3 +19,4 @@ class Formatters {
     return "${dataCurta(data)}/${data.year}";
   }
 }
+

@@ -65,13 +65,37 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1B1B1B),
         foregroundColor: Colors.white,
-        title: Text('Hé/Os - ${authService.usuarioAtual?.nome}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 28, errorBuilder: (context, error, stackTrace) => const Icon(Icons.content_cut, size: 24, color: Colors.white)),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Hé/Os - ${authService.usuarioAtual?.nome}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
-              await authService.logout();
-              if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: Colors.white,
+                  title: const Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                  content: const Text('Tem certeza que deseja sair do aplicativo?', style: TextStyle(color: Color(0xFF737784))),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB22222), foregroundColor: Colors.white),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await authService.logout();
+                        if (context.mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                      },
+                      child: const Text('Sair'),
+                    ),
+                  ],
+                ),
+              );
             },
           )
         ],
@@ -105,7 +129,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         title: Text(servico.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
                         subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
-                        trailing: InkWell(
+                        trailing: GestureDetector(behavior: HitTestBehavior.opaque,
                           onTap: () => _adicionarServico(servico.nome, servico.preco, comissao),
                           child: Container(
                             padding: const EdgeInsets.all(12),

@@ -51,7 +51,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, const Color(0xFF2559BD), () { Navigator.pop(context); mostrarDialogServico(context); }),
               _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, const Color(0xFFB22222), () { Navigator.pop(context); mostrarDialogDespesa(context); }),
               _buildMenuItem(context, 'Novo Barbeiro', Icons.person_add, const Color(0xFF2E4A35), () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); }, isLast: true),
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
             ],
           ),
         ),
@@ -60,7 +60,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildMenuItem(BuildContext context, String title, IconData icon, Color iconColor, VoidCallback onTap, {bool isLast = false}) {
-    return InkWell(
+    return GestureDetector(behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -79,7 +79,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildTabItem({required IconData iconOutline, required IconData iconFilled, required String label, required int index}) {
     bool isSelected = _abaAtual == index;
-    return InkWell(
+    return GestureDetector(behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _abaAtual = index),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -102,9 +102,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1B1B1B),
         foregroundColor: Colors.white,
-        title: const Text("Hero's Barbearia", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 28, errorBuilder: (context, error, stackTrace) => const Icon(Icons.content_cut, size: 24, color: Colors.white)),
+            const SizedBox(width: 12),
+            const Text("Hero's Barbearia", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.logout, color: Colors.white), onPressed: () async { await authService.logout(); if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())); })
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white), 
+            onPressed: () async {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: Colors.white,
+                  title: const Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                  content: const Text('Tem certeza que deseja sair do aplicativo?', style: TextStyle(color: Color(0xFF737784))),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB22222), foregroundColor: Colors.white),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await authService.logout();
+                        if (context.mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                      },
+                      child: const Text('Sair'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          )
         ],
       ),
       body: Stack(
@@ -171,7 +201,7 @@ class AbaRelatorios extends StatelessWidget {
   const AbaRelatorios({super.key});
 
   Widget _buildBotao(BuildContext context, String titulo, String tipo, IconData icone) {
-    return InkWell(
+    return GestureDetector(behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetalheRelatorioScreen(tipo: tipo, titulo: titulo))),
       child: Container(
         decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
@@ -289,12 +319,12 @@ class AbaRelatorios extends StatelessWidget {
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            InkWell(
+                            GestureDetector(behavior: HitTestBehavior.opaque,
                               onTap: () => DatabaseService().marcarComoPago(b.id),
                               child: const Text('Pagar', style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                             const SizedBox(width: 24),
-                            InkWell(
+                            GestureDetector(behavior: HitTestBehavior.opaque,
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
                               child: const Text('Ver Detalhes', style: TextStyle(color: Color(0xFF1B1B1B), fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
@@ -581,12 +611,12 @@ class AbaServicos extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            InkWell(
+                            GestureDetector(behavior: HitTestBehavior.opaque,
                               onTap: () => mostrarDialogServico(context, id: servico.id, nomeAtual: servico.nome, precoAtual: servico.preco, comissaoAtual: com),
                               child: const Icon(Icons.edit, color: Color(0xFF737784)),
                             ),
                             const SizedBox(width: 16),
-                            InkWell(
+                            GestureDetector(behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 mostrarDialogConfirmacao(
                                   context, 
