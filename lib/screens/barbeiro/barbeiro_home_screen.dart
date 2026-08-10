@@ -67,7 +67,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
         foregroundColor: Colors.white,
         title: Row(
           children: [
-            Image.asset('assets/logo.png', height: 28, errorBuilder: (context, error, stackTrace) => const Icon(Icons.content_cut, size: 24, color: Colors.white)),
+            Image.asset('assets/appbar-icon.png', height: 28, errorBuilder: (context, error, stackTrace) => const Icon(Icons.content_cut, size: 24, color: Colors.white)),
             const SizedBox(width: 12),
             Expanded(child: Text('Hé/Os - ${authService.usuarioAtual?.nome}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
           ],
