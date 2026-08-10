@@ -50,58 +50,6 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
       _servicosSelecionados.clear();
       _salvando = false;
     });
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../models/servico_model.dart';
-import '../../services/auth_service.dart';
-import '../../services/database_service.dart';
-import '../auth/login_screen.dart';
-import '../../utils/formatters.dart';
-
-class BarbeiroHomeScreen extends StatefulWidget {
-  const BarbeiroHomeScreen({super.key});
-
-  @override
-  State<BarbeiroHomeScreen> createState() => _BarbeiroHomeScreenState();
-}
-
-class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
-  final DatabaseService _db = DatabaseService();
-  final List<Map<String, dynamic>> _servicosSelecionados = [];
-  String _formaPagamento = 'PIX';
-  bool _salvando = false;
-
-  double get _valorTotal => _servicosSelecionados.fold(0, (sum, item) => sum + (item['preco'] as num).toDouble());
-  double get _comissaoExtra => _servicosSelecionados.fold(0, (sum, item) => sum + (item['comissao'] as num).toDouble());
-
-  void _adicionarServico(String nome, double preco, double comissao) {
-    setState(() => _servicosSelecionados.add({'nome': nome, 'preco': preco, 'comissao': comissao}));
-  }
-
-  void _removerServico(int index) {
-    setState(() => _servicosSelecionados.removeAt(index));
-  }
-
-  void _finalizarAtendimento() async {
-    if (_servicosSelecionados.isEmpty) return;
-    setState(() => _salvando = true);
-
-    final auth = Provider.of<AuthService>(context, listen: false);
-    List<String> nomesServicos = _servicosSelecionados.map((s) => s['nome'].toString()).toList();
-
-    await _db.registrarCorte(
-      barbeiroNome: auth.usuarioAtual?.nome ?? 'Barbeiro',
-      barbeiroId: auth.usuarioAtual?.id ?? '',
-      servicosFeitos: nomesServicos,
-      valorTotal: _valorTotal,
-      comissaoProdutos: _comissaoExtra,
-      formaPagamento: _formaPagamento,
-    );
-
-    setState(() {
-      _servicosSelecionados.clear();
-      _salvando = false;
-    });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Atendimento finalizado!'), backgroundColor: Colors.black));
