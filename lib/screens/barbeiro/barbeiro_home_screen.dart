@@ -69,7 +69,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           children: [
             Image.asset('assets/appbar-icon.png', height: 28, errorBuilder: (context, error, stackTrace) => const Icon(Icons.content_cut, size: 24, color: Colors.white)),
             const SizedBox(width: 12),
-            Expanded(child: Text('Hé/Os - ${authService.usuarioAtual?.nome}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
+            Expanded(child: Text("Hero's - ${authService.usuarioAtual?.nome}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
           ],
         ),
         actions: [
@@ -104,7 +104,6 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
         children: [
           // LISTA DE SERVIÇOS
           Expanded(
-            flex: 3,
             child: StreamBuilder<List<ServicoModel>>(
               stream: _db.getServicos(),
               builder: (context, snapshot) {
@@ -144,75 +143,86 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
               },
             ),
           ),
-          
-          // CARRINHO DE COMPRAS
-          Expanded(
-            flex: 2,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
-              ),
+                    // CARRINHO DE COMPRAS
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+            ),
+            child: SafeArea(
+              top: false,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF737784), letterSpacing: 1.2)),
+                    padding: EdgeInsets.symmetric(vertical: 12.0),
+                    child: Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF737784), letterSpacing: 1.2)),
                   ),
-                  Expanded(
-                    child: _servicosSelecionados.isEmpty 
-                      ? const Center(child: Text('Nenhum serviço adicionado.', style: TextStyle(color: Color(0xFF737784))))
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _servicosSelecionados.length,
-                          separatorBuilder: (context, index) => const Divider(height: 16, color: Colors.transparent),
-                          itemBuilder: (context, index) {
-                            var item = _servicosSelecionados[index];
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(item['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF1B1B1B))),
-                                Row(
-                                  children: [
-                                    Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-                                    const SizedBox(width: 10),
-                                    GestureDetector(
-                                      onTap: () => _removerServico(index),
-                                      child: const Icon(Icons.remove_circle_outline, color: Color(0xFF737784)),
-                                    )
-                                  ],
-                                )
-                              ],
-                            );
-                          },
-                        ),
-                  ),
+                  if (_servicosSelecionados.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 16.0),
+                      child: Text('Nenhum serviço adicionado.', style: TextStyle(color: Color(0xFF737784))),
+                    )
+                  else
+                    Container(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.25),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _servicosSelecionados.length,
+                        separatorBuilder: (context, index) => const Divider(height: 12, color: Colors.transparent),
+                        itemBuilder: (context, index) {
+                          var item = _servicosSelecionados[index];
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text(item['nome'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1B1B1B)), overflow: TextOverflow.ellipsis)),
+                              Row(
+                                children: [
+                                  Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () => _removerServico(index),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Icon(Icons.remove_circle_outline, color: Color(0xFFB22222), size: 24),
+                                    ),
+                                  )
+                                ],
+                              )
+                            ],
+                          );
+                        },
+                      ),
+                    ),
                   // PAGAMENTO
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF737784), letterSpacing: 1.2)),
-                            Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
+                            Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           value: _formaPagamento,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                             filled: true,
                             fillColor: const Color(0xFFF5F5F5),
                           ),
                           items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
                           onChanged: (v) => setState(() => _formaPagamento = v!),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -220,12 +230,12 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1B1B1B),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             child: _salvando 
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1)),
                           ),
                         ),
                       ],

@@ -118,7 +118,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 builder: (context) => AlertDialog(
                   backgroundColor: Colors.white,
                   title: const Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-                  content: const Text('Tem certeza que deseja sair do aplicativo?', style: TextStyle(color: Color(0xFF737784))),
+                  content: const Text('Tem certeza que deseja sair da sua conta?', style: TextStyle(color: Color(0xFF737784))),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
                     ElevatedButton(
