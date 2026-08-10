@@ -81,9 +81,11 @@ class DatabaseService {
     return _firestore
         .collection('usuarios')
         .where('role', isEqualTo: 'barbeiro')
-        .where('ativo', isEqualTo: true)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => UsuarioModel.fromDoc(doc)).toList());
+        .map((snap) => snap.docs
+            .map((doc) => UsuarioModel.fromDoc(doc))
+            .where((u) => u.ativo)
+            .toList());
   }
 
   // CRIA O USUÁRIO NO BANCO DE DADOS E NO AUTH SEM DESLOGAR O ADMIN
