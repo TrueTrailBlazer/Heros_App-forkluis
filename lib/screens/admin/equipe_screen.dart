@@ -39,7 +39,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                 itemBuilder: (context, index) {
                   var barbeiro = barbeiros[index];
                   String nome = barbeiro.nome;
-                  String diaPag = barbeiro.diaPagamento;
+                  String diaPag = barbeiro.diaPagamento ?? 'Sábado';
                   
                   return InkWell(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
