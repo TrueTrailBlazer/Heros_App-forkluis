@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/servico_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../auth/login_screen.dart';
+import '../../utils/formatters.dart';
 
 class BarbeiroHomeScreen extends StatefulWidget {
   const BarbeiroHomeScreen({super.key});
@@ -60,9 +61,11 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
     final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text('Hé/Os - ${authService.usuarioAtual?.nome}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1B1B1B),
+        foregroundColor: Colors.white,
+        title: Text('Hé/Os - ${authService.usuarioAtual?.nome}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -78,42 +81,39 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           // LISTA DE SERVIÇOS
           Expanded(
             flex: 3,
-            child: StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<List<ServicoModel>>(
               stream: _db.getServicos(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
-                final servicos = snapshot.data!.docs;
+                final servicos = snapshot.data!;
                 
                 if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço cadastrado.', style: TextStyle(color: Colors.grey)));
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: servicos.length,
-                  itemBuilder: (context, index) {
-                    var s = servicos[index];
-                    var d = s.data() as Map<String, dynamic>;
-                    double comissao = d.containsKey('comissao') ? (d['comissao'] as num).toDouble() : 0.0;
-                    
-                    return Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
-                      color: Colors.white,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
+                return Container(
+                  color: Colors.white,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(0),
+                    itemCount: servicos.length,
+                    separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                    itemBuilder: (context, index) {
+                      var servico = servicos[index];
+                      double comissao = servico.comissao;
+                      
+                      return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        title: Text(d['nome'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        subtitle: Text('R\$ ${(d['preco'] as num).toStringAsFixed(2)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}'),
+                        title: Text(servico.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                        subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
                         trailing: InkWell(
-                          onTap: () => _adicionarServico(d['nome'], (d['preco'] as num).toDouble(), comissao),
+                          onTap: () => _adicionarServico(servico.nome, servico.preco, comissao),
                           child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.add, color: Colors.white),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.add, color: Color(0xFF1B1B1B), size: 20),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -123,43 +123,40 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           Expanded(
             flex: 2,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
               ),
               child: Column(
                 children: [
                   const Padding(
                     padding: EdgeInsets.all(16.0),
-                    child: Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
+                    child: Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF737784), letterSpacing: 1.2)),
                   ),
                   Expanded(
                     child: _servicosSelecionados.isEmpty 
-                      ? const Center(child: Text('Nenhum serviço adicionado.', style: TextStyle(color: Colors.grey)))
-                      : ListView.builder(
+                      ? const Center(child: Text('Nenhum serviço adicionado.', style: TextStyle(color: Color(0xFF737784))))
+                      : ListView.separated(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: _servicosSelecionados.length,
+                          separatorBuilder: (context, index) => const Divider(height: 16, color: Colors.transparent),
                           itemBuilder: (context, index) {
                             var item = _servicosSelecionados[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(item['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                                  Row(
-                                    children: [
-                                      Text('R\$ ${item['preco'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      const SizedBox(width: 10),
-                                      GestureDetector(
-                                        onTap: () => _removerServico(index),
-                                        child: const Icon(Icons.remove_circle_outline, color: Colors.grey),
-                                      )
-                                    ],
-                                  )
-                                ],
-                              ),
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(item['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF1B1B1B))),
+                                Row(
+                                  children: [
+                                    Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                                    const SizedBox(width: 10),
+                                    GestureDetector(
+                                      onTap: () => _removerServico(index),
+                                      child: const Icon(Icons.remove_circle_outline, color: Color(0xFF737784)),
+                                    )
+                                  ],
+                                )
+                              ],
                             );
                           },
                         ),
@@ -172,18 +169,21 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
-                            Text('R\$ ${_valorTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                            const Text('TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF737784), letterSpacing: 1.2)),
+                            Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
                           ],
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: _formaPagamento,
                           decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            filled: true,
+                            fillColor: const Color(0xFFF5F5F5),
                           ),
-                          items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
+                          items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
                           onChanged: (v) => setState(() => _formaPagamento = v!),
                         ),
                         const SizedBox(height: 16),
@@ -192,13 +192,14 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                           child: ElevatedButton(
                             onPressed: (_servicosSelecionados.isEmpty || _salvando) ? null : _finalizarAtendimento,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: const Color(0xFF1B1B1B),
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             child: _salvando 
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                                : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
                           ),
                         ),
                       ],

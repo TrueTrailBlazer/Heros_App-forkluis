@@ -1,36 +1,41 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UsuarioModel {
-  final String uid;
+  final String id;
   final String nome;
-  final String role; // 'admin' ou 'barbeiro'
-  final int? diaFechamento; // 1 a 7 (Segunda a Domingo)
-  final String? horaFechamento; // Ex: "21:00"
+  final String role;
+  final String? diaPagamento;
+  final Timestamp? ultimoPagamento;
+  final bool ativo;
 
   UsuarioModel({
-    required this.uid,
+    required this.id,
     required this.nome,
     required this.role,
-    this.diaFechamento,
-    this.horaFechamento,
+    this.diaPagamento,
+    this.ultimoPagamento,
+    this.ativo = true,
   });
 
-  // Converte do Firebase para o App
-  factory UsuarioModel.fromMap(Map<String, dynamic> map, String documentId) {
+  factory UsuarioModel.fromDoc(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>? ?? {};
     return UsuarioModel(
-      uid: documentId,
-      nome: map['nome'] ?? '',
-      role: map['role'] ?? 'barbeiro',
-      diaFechamento: map['diaFechamento'],
-      horaFechamento: map['horaFechamento'],
+      id: doc.id,
+      nome: d['nome'] ?? 'Sem nome',
+      role: d['role'] ?? 'barbeiro',
+      diaPagamento: d['diaPagamento'],
+      ultimoPagamento: d['ultimoPagamento'],
+      ativo: d['ativo'] ?? true,
     );
   }
 
-  // Converte do App para o Firebase
   Map<String, dynamic> toMap() {
     return {
       'nome': nome,
       'role': role,
-      'diaFechamento': diaFechamento,
-      'horaFechamento': horaFechamento,
+      'diaPagamento': diaPagamento,
+      'ultimoPagamento': ultimoPagamento,
+      'ativo': ativo,
     };
   }
 }

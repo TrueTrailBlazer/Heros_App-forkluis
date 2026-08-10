@@ -8,81 +8,12 @@ import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../auth/login_screen.dart';
 import 'equipe_screen.dart'; // Importante para puxar a tela de Acerto
-
-// ==========================================
-// FUNÇÕES GLOBAIS DE DIALOG (MOVIDAS PARA O FAB CENTRAL)
-// ==========================================
-void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, double? precoAtual, double? comissaoAtual}) {
-  final nomeC = TextEditingController(text: nomeAtual);
-  final precoC = TextEditingController(text: precoAtual?.toString());
-  final comissaoC = TextEditingController(text: comissaoAtual?.toString() ?? '0');
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
-      title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar Serviço', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(controller: nomeC, decoration: const InputDecoration(labelText: 'Nome (Ex: Pomada)')),
-          const SizedBox(height: 10),
-          TextField(controller: precoC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Preço Cliente (R\$)')),
-          const SizedBox(height: 10),
-          TextField(controller: comissaoC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Comissão Barbeiro (R\$)')),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
-        ElevatedButton(
-          onPressed: () {
-            double p = double.tryParse(precoC.text.replaceAll(',', '.')) ?? 0;
-            double c = double.tryParse(comissaoC.text.replaceAll(',', '.')) ?? 0;
-            if (id == null) DatabaseService().addServico(nomeC.text, p, c);
-            else DatabaseService().updateServico(id, nomeC.text, p, c);
-            Navigator.pop(context);
-          },
-          child: const Text('Salvar'),
-        )
-      ],
-    ),
-  );
-}
-
-void mostrarDialogDespesa(BuildContext context) {
-  final descC = TextEditingController();
-  final valorC = TextEditingController();
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
-      title: const Text('Nova Despesa', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(controller: descC, decoration: const InputDecoration(labelText: 'Descrição (Ex: Água, Luz)')),
-          const SizedBox(height: 10),
-          TextField(controller: valorC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Valor (R\$)')),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB22222)), // botão de despesa em vermelho
-          onPressed: () {
-            double v = double.tryParse(valorC.text.replaceAll(',', '.')) ?? 0;
-            DatabaseService().registrarDespesaVale('Despesa da Loja', descC.text, v);
-            Navigator.pop(context);
-          },
-          child: const Text('Lançar Despesa'),
-        )
-      ],
-    ),
-  );
-}
+import '../../models/corte_model.dart';
+import '../../models/servico_model.dart';
+import '../../models/despesa_model.dart';
+import '../../models/usuario_model.dart';
+import '../../widgets/dialogs.dart';
+import '../../utils/formatters.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -200,7 +131,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildTabItem(iconOutline: Icons.analytics_outlined, iconFilled: Icons.analytics, label: 'Relat.', index: 0),
-                  _buildTabItem(iconOutline: Icons.content_cut, iconFilled: Icons.content_cut, label: 'Serviços', index: 1),
+                  _buildTabItem(iconOutline: Icons.design_services_outlined, iconFilled: Icons.design_services, label: 'Serviços', index: 1),
                   const SizedBox(width: 64), // Espaço para o FAB
                   _buildTabItem(iconOutline: Icons.payments_outlined, iconFilled: Icons.payments, label: 'Despesas', index: 2),
                   _buildTabItem(iconOutline: Icons.groups_outlined, iconFilled: Icons.groups, label: 'Equipe', index: 3),
@@ -274,20 +205,18 @@ class AbaRelatorios extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         // Faturamento Bruto
-        StreamBuilder<QuerySnapshot>(
+        StreamBuilder<List<CorteModel>>(
           stream: DatabaseService().getTodosOsCortes(),
           builder: (context, snapshot) {
             double lucroHoje = 0;
             int qtdServicos = 0;
             if (snapshot.hasData) {
               DateTime inicioHoje = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-              var cortesHoje = snapshot.data!.docs.where((doc) {
-                var dados = doc.data() as Map<String, dynamic>? ?? {};
-                if (dados['data'] == null) return false;
-                return (dados['data'] as Timestamp).toDate().isAfter(inicioHoje) || (dados['data'] as Timestamp).toDate().isAtSameMomentAs(inicioHoje);
+              var cortesHoje = snapshot.data!.where((corte) {
+                return corte.data.isAfter(inicioHoje) || corte.data.isAtSameMomentAs(inicioHoje);
               }).toList();
               qtdServicos = cortesHoje.length;
-              lucroHoje = cortesHoje.fold(0, (s, doc) => s + (((doc.data() as Map)['valor'] ?? 0) as num).toDouble());
+              lucroHoje = cortesHoje.fold(0, (s, corte) => s + corte.valor);
             }
 
             return Container(
@@ -298,7 +227,7 @@ class AbaRelatorios extends StatelessWidget {
                 children: [
                   const Text('Faturamento Bruto', style: TextStyle(color: Color(0xFF737784), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                   const SizedBox(height: 8),
-                  Text('R\$ ${lucroHoje.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0047AB))),
+                  Text('R\$ ${Formatters.moeda(lucroHoje)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0047AB))),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -315,18 +244,17 @@ class AbaRelatorios extends StatelessWidget {
         ),
 
         // Acerto Pendente
-        StreamBuilder<QuerySnapshot>(
+        StreamBuilder<List<UsuarioModel>>(
           stream: DatabaseService().getBarbeiros(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const SizedBox();
-            var barbeiros = snapshot.data!.docs;
+            var barbeiros = snapshot.data!;
             
             List<Widget> alertas = [];
             for (var b in barbeiros) {
-              var d = b.data() as Map<String, dynamic>;
-              String nome = d['nome'] ?? 'Barbeiro';
-              String diaPag = d['diaPagamento'] ?? 'Sábado';
-              Timestamp? ultimoPag = d['ultimoPagamento'];
+              String nome = b.nome;
+              String diaPag = b.diaPagamento ?? 'Sábado';
+              Timestamp? ultimoPag = b.ultimoPagamento;
 
               if (_precisaPagar(diaPag, ultimoPag)) {
                 alertas.add(
@@ -418,7 +346,7 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
   final DatabaseService _db = DatabaseService();
   String _barbeiroSelecionado = 'Todos';
 
-  Future<void> _exportarRelatorioPDF(List<QueryDocumentSnapshot> cortes, double total) async {
+  Future<void> _exportarRelatorioPDF(List<CorteModel> cortes, double total) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -430,17 +358,16 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
             pw.Text("Relatório ${widget.titulo} - Heros'app", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 10),
             pw.Text("Barbeiro: $_barbeiroSelecionado", style: const pw.TextStyle(fontSize: 16)),
-            pw.Text("Faturamento Bruto: R\$ ${total.toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+            pw.Text("Faturamento Bruto: R\$ ${Formatters.moeda(total)}", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 20),
             pw.Text("--- HISTÓRICO DE SERVIÇOS ---", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 10),
-            ...cortes.map((doc) {
-              var d = doc.data() as Map<String, dynamic>;
-              DateTime data = (d['data'] as Timestamp).toDate();
-              String horaStr = "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')} às ${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}";
+            ...cortes.map((corte) {
+              DateTime data = corte.data;
+              String horaStr = Formatters.dataHora(data);
               return pw.Container(
                 margin: const pw.EdgeInsets.only(bottom: 6),
-                child: pw.Text("[$horaStr] ${d['barbeiroNome']} | R\$ ${d['valor'].toStringAsFixed(2)} | Pag: ${d['formaPagamento']}"),
+                child: pw.Text("[$horaStr] ${corte.barbeiroNome} | R\$ ${Formatters.moeda(corte.valor)} | Pag: ${corte.formaPagamento}"),
               );
             }),
           ];
@@ -454,60 +381,80 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(title: Text('Relatório ${widget.titulo}')),
-      body: StreamBuilder<QuerySnapshot>(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1B1B1B),
+        foregroundColor: Colors.white,
+        title: Text('Relatório ${widget.titulo}', style: const TextStyle(fontWeight: FontWeight.bold)),
+      ),
+      body: StreamBuilder<List<CorteModel>>(
         stream: _db.getTodosOsCortes(),
         builder: (context, snapshotCortes) {
           if (!snapshotCortes.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
-          var cortes = snapshotCortes.data!.docs;
+          var cortes = snapshotCortes.data!;
           DateTime agora = DateTime.now();
           DateTime inicioHoje = DateTime(agora.year, agora.month, agora.day);
           DateTime inicioSemana = inicioHoje.subtract(Duration(days: agora.weekday - 1));
           DateTime inicioMes = DateTime(agora.year, agora.month, 1);
 
-          var cortesFiltrados = cortes.where((doc) {
-            var dados = doc.data() as Map<String, dynamic>;
-            if (dados['data'] == null) return false;
-            DateTime d = (dados['data'] as Timestamp).toDate();
+          var cortesFiltrados = cortes.where((corte) {
+            DateTime d = corte.data;
             if (widget.tipo == 'Hoje') return d.isAfter(inicioHoje) || d.isAtSameMomentAs(inicioHoje);
             if (widget.tipo == 'Semana') return d.isAfter(inicioSemana) || d.isAtSameMomentAs(inicioSemana);
             return d.isAfter(inicioMes) || d.isAtSameMomentAs(inicioMes);
           }).toList();
 
           Set<String> nomesBarbeiros = {'Todos'};
-          for (var c in cortesFiltrados) nomesBarbeiros.add((c.data() as Map<String, dynamic>)['barbeiroNome']);
+          for (var c in cortesFiltrados) nomesBarbeiros.add(c.barbeiroNome);
           if (!nomesBarbeiros.contains(_barbeiroSelecionado)) _barbeiroSelecionado = 'Todos';
 
-          var cortesFinais = cortesFiltrados.where((doc) => _barbeiroSelecionado == 'Todos' || (doc.data() as Map<String, dynamic>)['barbeiroNome'] == _barbeiroSelecionado).toList();
-          double totalCaixa = cortesFinais.fold(0, (s, doc) => s + ((doc.data() as Map<String, dynamic>)['valor'] as num).toDouble());
+          var cortesFinais = cortesFiltrados.where((c) => _barbeiroSelecionado == 'Todos' || c.barbeiroNome == _barbeiroSelecionado).toList();
+          double totalCaixa = cortesFinais.fold(0, (s, c) => s + c.valor);
 
           return Column(
             children: [
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)]),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+                ),
                 child: Column(
                   children: [
                     DropdownButtonFormField<String>(
                       value: _barbeiroSelecionado,
-                      decoration: InputDecoration(labelText: 'Filtrar por Barbeiro', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Colors.grey[50]),
-                      items: nomesBarbeiros.map((n) => DropdownMenuItem(value: n, child: Text(n, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
+                      decoration: InputDecoration(
+                        labelText: 'Filtrar por Barbeiro', 
+                        labelStyle: const TextStyle(color: Color(0xFF737784)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        filled: true, 
+                        fillColor: Colors.white
+                      ),
+                      items: nomesBarbeiros.map((n) => DropdownMenuItem(value: n, child: Text(n, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
                       onChanged: (v) => setState(() => _barbeiroSelecionado = v!),
                     ),
                     const SizedBox(height: 20),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Faturamento Bruto:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text('R\$ ${totalCaixa.toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                    ]),
-                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                      children: [
+                        const Text('Faturamento Bruto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF737784), letterSpacing: 1.2)),
+                        Text('R\$ ${Formatters.moeda(totalCaixa)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
+                      ]
+                    ),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.picture_as_pdf),
                         label: const Text('Baixar PDF Oficial'),
                         onPressed: () => _exportarRelatorioPDF(cortesFinais, totalCaixa),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B1B1B), 
+                          foregroundColor: Colors.white, 
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
                       ),
                     )
                   ],
@@ -515,31 +462,59 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
               ),
               Expanded(
                 child: cortesFinais.isEmpty 
-                  ? const Center(child: Text('Nenhum corte registrado.', style: TextStyle(color: Colors.grey))) 
-                  : ListView.builder(
+                  ? const Center(child: Text('Nenhum corte registrado.', style: TextStyle(color: Color(0xFF737784)))) 
+                  : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
-                      itemCount: cortesFinais.length,
-                      itemBuilder: (context, index) {
-                        var dados = cortesFinais[index].data() as Map<String, dynamic>;
-                        List servicos = dados['servicos'] ?? [];
-                        DateTime hora = (dados['data'] as Timestamp).toDate();
-                        return Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+                      child: Container(
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.content_cut, color: Colors.white, size: 20)),
-                              title: Text('${dados['barbeiroNome']} - R\$ ${dados['valor'].toStringAsFixed(2)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text("${servicos.join(" + ")}\nPag. ${dados['formaPagamento']}", style: const TextStyle(fontSize: 13)),
-                              isThreeLine: true,
-                              trailing: Text("${hora.day}/${hora.month} às ${hora.hour.toString().padLeft(2, '0')}:${hora.minute.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12)),
-                            ),
-                          ),
-                        );
-                      },
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: cortesFinais.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                          itemBuilder: (context, index) {
+                            var corte = cortesFinais[index];
+                            List<String> servicos = corte.servicos;
+                            DateTime hora = corte.data;
+                            return Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
+                                    child: const Icon(Icons.content_cut, color: Color(0xFF1B1B1B), size: 20),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('${corte.barbeiroNome}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                        const SizedBox(height: 4),
+                                        Text("${servicos.join(" + ")}\nPag. ${corte.formaPagamento}", style: const TextStyle(fontSize: 13, color: Color(0xFF737784))),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text('R\$ ${Formatters.moeda(corte.valor)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                      const SizedBox(height: 4),
+                                      Text(Formatters.dataHora(hora), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF737784), fontSize: 12)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
               ),
             ],
@@ -560,11 +535,11 @@ class AbaServicos extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFFF5F5F5),
-      child: StreamBuilder<QuerySnapshot>(
+      child: StreamBuilder<List<ServicoModel>>(
         stream: DatabaseService().getServicos(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
-          var servicos = snapshot.data!.docs;
+          var servicos = snapshot.data!;
           if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço.', style: TextStyle(color: Colors.grey)));
 
           return SingleChildScrollView(
@@ -581,9 +556,8 @@ class AbaServicos extends StatelessWidget {
                 itemCount: servicos.length,
                 separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
                 itemBuilder: (context, index) {
-                  var s = servicos[index];
-                  var d = s.data() as Map<String, dynamic>;
-                  double com = d.containsKey('comissao') ? (d['comissao'] as num).toDouble() : 0.0;
+                  var servico = servicos[index];
+                  double com = servico.comissao;
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -593,9 +567,9 @@ class AbaServicos extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(d['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                              Text(servico.nome, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
                               const SizedBox(height: 4),
-                              Text('R\$ ${(d['preco'] as num).toStringAsFixed(2)}${com > 0 ? ' (Comissão: R\$ $com)' : ''}', style: const TextStyle(fontSize: 14, color: Color(0xFF737784))),
+                              Text('R\$ ${Formatters.moeda(servico.preco)}${com > 0 ? ' (Comissão: R\$ $com)' : ''}', style: const TextStyle(fontSize: 14, color: Color(0xFF737784))),
                             ],
                           ),
                         ),
@@ -603,12 +577,19 @@ class AbaServicos extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             InkWell(
-                              onTap: () => mostrarDialogServico(context, id: s.id, nomeAtual: d['nome'], precoAtual: (d['preco'] as num).toDouble(), comissaoAtual: com),
+                              onTap: () => mostrarDialogServico(context, id: servico.id, nomeAtual: servico.nome, precoAtual: servico.preco, comissaoAtual: com),
                               child: const Icon(Icons.edit, color: Color(0xFF737784)),
                             ),
                             const SizedBox(width: 16),
                             InkWell(
-                              onTap: () => DatabaseService().deleteServico(s.id),
+                              onTap: () {
+                                mostrarDialogConfirmacao(
+                                  context, 
+                                  titulo: 'Excluir Serviço', 
+                                  mensagem: 'Tem certeza que deseja excluir o serviço "${servico.nome}"? Essa ação não pode ser desfeita.', 
+                                  onConfirmar: () => DatabaseService().deleteServico(servico.id),
+                                );
+                              },
                               child: const Icon(Icons.delete, color: Color(0xFFB22222)),
                             ),
                           ],
@@ -669,17 +650,15 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<List<DespesaModel>>(
               stream: DatabaseService().getDespesasEVales(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
                 DateTime agora = DateTime.now();
                 DateTime inicioMesAtual = DateTime(agora.year, agora.month, 1);
                 DateTime inicioMesPassado = DateTime(agora.year, agora.month - 1, 1);
-                var itens = snapshot.data!.docs.where((doc) {
-                  var dados = doc.data() as Map<String, dynamic>? ?? {};
-                  if (dados['data'] == null) return false;
-                  DateTime d = (dados['data'] as Timestamp).toDate();
+                var itens = snapshot.data!.where((despesa) {
+                  DateTime d = despesa.data;
                   if (_filtroMes == 'Mês Atual') return d.isAfter(inicioMesAtual) || d.isAtSameMomentAs(inicioMesAtual);
                   if (_filtroMes == 'Mês Passado') return d.isAfter(inicioMesPassado) && d.isBefore(inicioMesAtual);
                   return true;
@@ -701,8 +680,8 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                       itemCount: itens.length,
                       separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
                       itemBuilder: (context, index) {
-                        var d = itens[index].data() as Map<String, dynamic>;
-                        DateTime data = (d['data'] as Timestamp?)?.toDate() ?? DateTime.now();
+                        var despesa = itens[index];
+                        DateTime data = despesa.data;
                         return Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -715,14 +694,14 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('${d['descricao']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                      Text(despesa.descricao, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
                                       const SizedBox(height: 4),
-                                      Text('${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}', style: const TextStyle(fontSize: 12, color: Color(0xFF737784))),
+                                      Text(Formatters.dataLonga(data), style: const TextStyle(fontSize: 12, color: Color(0xFF737784))),
                                     ],
                                   ),
                                 ],
                               ),
-                              Text('- R\$ ${(d['valor'] as num).toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFFB22222), fontWeight: FontWeight.bold, fontSize: 18)),
+                              Text('- R\$ ${Formatters.moeda(despesa.valor)}', style: const TextStyle(color: Color(0xFFB22222), fontWeight: FontWeight.bold, fontSize: 18)),
                             ],
                           ),
                         );

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../../services/auth_service.dart';
+import '../../models/usuario_model.dart';
 import 'auth/login_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'barbeiro/barbeiro_home_screen.dart';
@@ -69,22 +70,25 @@ class _AuthCheckState extends State<AuthCheck> {
     if (mounted) {
       final authService = Provider.of<AuthService>(context, listen: false);
       
-      if (doc.exists) {
-        authService.usuarioAtual = UsuarioAtual(
-          id: user.uid,
-          nome: doc['nome'] ?? 'Usuário',
-          role: doc['role'] ?? 'barbeiro',
-        );
-        
-        if (authService.usuarioAtual?.role == 'admin') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-        } else {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BarbeiroHomeScreen()));
-        }
-      } else {
-        // Se for o chefão que não está na coleção
-        authService.usuarioAtual = UsuarioAtual(id: user.uid, nome: 'Admin', role: 'admin');
+      if (!doc.exists) {
+        // Se não tem documento, desloga
+        await FirebaseAuth.instance.signOut();
+        if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+        return;
+      }
+
+      authService.usuarioAtual = UsuarioModel.fromDoc(doc);
+
+      if (!authService.usuarioAtual!.ativo) {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+        return;
+      }
+      
+      if (authService.usuarioAtual?.role == 'admin') {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const BarbeiroHomeScreen()));
       }
     }
   }

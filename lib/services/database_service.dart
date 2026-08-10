@@ -1,6 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart'; // NECESSÁRIO PARA O TRUQUE DO LOGIN
+import 'package:firebase_core/firebase_core.dart';
+import '../models/usuario_model.dart';
+import '../models/servico_model.dart';
+import '../models/corte_model.dart';
+import '../models/despesa_model.dart';
 
 class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -25,13 +29,21 @@ class DatabaseService {
     });
   }
 
-  Stream<QuerySnapshot> getTodosOsCortes() {
-    return _firestore.collection('cortes').orderBy('data', descending: true).snapshots();
+  Stream<List<CorteModel>> getTodosOsCortes() {
+    return _firestore
+        .collection('cortes')
+        .orderBy('data', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => CorteModel.fromDoc(doc)).toList());
   }
 
   // --- SERVIÇOS E PRODUTOS ---
-  Stream<QuerySnapshot> getServicos() {
-    return _firestore.collection('servicos').orderBy('nome').snapshots();
+  Stream<List<ServicoModel>> getServicos() {
+    return _firestore
+        .collection('servicos')
+        .orderBy('nome')
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => ServicoModel.fromDoc(doc)).toList());
   }
 
   Future<void> addServico(String nome, double preco, double comissao) async {
@@ -56,13 +68,22 @@ class DatabaseService {
     });
   }
 
-  Stream<QuerySnapshot> getDespesasEVales() {
-    return _firestore.collection('despesas').orderBy('data', descending: true).snapshots();
+  Stream<List<DespesaModel>> getDespesasEVales() {
+    return _firestore
+        .collection('despesas')
+        .orderBy('data', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => DespesaModel.fromDoc(doc)).toList());
   }
 
   // --- EQUIPE & PAGAMENTOS ---
-  Stream<QuerySnapshot> getBarbeiros() {
-    return _firestore.collection('usuarios').where('role', isEqualTo: 'barbeiro').snapshots();
+  Stream<List<UsuarioModel>> getBarbeiros() {
+    return _firestore
+        .collection('usuarios')
+        .where('role', isEqualTo: 'barbeiro')
+        .where('ativo', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => UsuarioModel.fromDoc(doc)).toList());
   }
 
   // CRIA O USUÁRIO NO BANCO DE DADOS E NO AUTH SEM DESLOGAR O ADMIN
@@ -80,13 +101,14 @@ class DatabaseService {
         'nome': nome,
         'role': 'barbeiro',
         'diaPagamento': diaPagamento,
-        'ultimoPagamento': null, // Inicia sem pagamentos
+        'ultimoPagamento': null,
+        'ativo': true,
       });
 
-      await tempApp.delete(); // Deleta o app temporário
+      await tempApp.delete();
       return null; // Sucesso
     } on FirebaseAuthException catch (e) {
-      return e.message; // Retorna erro se o email já existir ou a senha for fraca
+      return e.message;
     } catch (e) {
       return "Erro desconhecido: $e";
     }
@@ -97,7 +119,7 @@ class DatabaseService {
   }
 
   Future<void> deleteBarbeiro(String id) async {
-    await _firestore.collection('usuarios').doc(id).delete();
+    await _firestore.collection('usuarios').doc(id).update({'ativo': false});
   }
 
   Future<void> marcarComoPago(String id) async {
