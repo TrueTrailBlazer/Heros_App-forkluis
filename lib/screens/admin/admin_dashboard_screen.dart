@@ -208,6 +208,8 @@ class AbaRelatorios extends StatelessWidget {
         StreamBuilder<List<CorteModel>>(
           stream: DatabaseService().getTodosOsCortes(),
           builder: (context, snapshot) {
+            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
             double lucroHoje = 0;
             int qtdServicos = 0;
             if (snapshot.hasData) {
@@ -247,6 +249,8 @@ class AbaRelatorios extends StatelessWidget {
         StreamBuilder<List<UsuarioModel>>(
           stream: DatabaseService().getBarbeiros(),
           builder: (context, snapshot) {
+            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
             if (!snapshot.hasData) return const SizedBox();
             var barbeiros = snapshot.data!;
             
@@ -538,6 +542,8 @@ class AbaServicos extends StatelessWidget {
       child: StreamBuilder<List<ServicoModel>>(
         stream: DatabaseService().getServicos(),
         builder: (context, snapshot) {
+            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
           var servicos = snapshot.data!;
           if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço.', style: TextStyle(color: Colors.grey)));
@@ -653,6 +659,8 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
             child: StreamBuilder<List<DespesaModel>>(
               stream: DatabaseService().getDespesasEVales(),
               builder: (context, snapshot) {
+            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
                 DateTime agora = DateTime.now();
                 DateTime inicioMesAtual = DateTime(agora.year, agora.month, 1);

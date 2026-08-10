@@ -19,6 +19,8 @@ class _EquipeScreenState extends State<EquipeScreen> {
       child: StreamBuilder<List<UsuarioModel>>(
         stream: DatabaseService().getBarbeiros(),
         builder: (context, snapshot) {
+            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
           var barbeiros = snapshot.data!;
           if (barbeiros.isEmpty) return const Center(child: Text('Nenhum membro na equipe.', style: TextStyle(color: Colors.grey)));
@@ -274,4 +276,4 @@ class AcertoBarbeiroScreen extends StatelessWidget {
       ),
     );
   }
-}
+}

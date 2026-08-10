@@ -84,6 +84,8 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
             child: StreamBuilder<List<ServicoModel>>(
               stream: _db.getServicos(),
               builder: (context, snapshot) {
+            if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
                 final servicos = snapshot.data!;
                 
