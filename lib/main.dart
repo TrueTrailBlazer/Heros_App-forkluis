@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'controllers/admin_controller.dart';
+import 'controllers/barbeiro_controller.dart';
 
 import 'firebase_options.dart';
 
@@ -24,6 +25,13 @@ void main() async {
         ChangeNotifierProxyProvider<DatabaseService, AdminController>(
           create: (ctx) => AdminController(Provider.of<DatabaseService>(ctx, listen: false)),
           update: (ctx, db, prev) => prev ?? AdminController(db),
+        ),
+        ChangeNotifierProxyProvider2<DatabaseService, AuthService, BarbeiroController>(
+          create: (ctx) => BarbeiroController(
+            Provider.of<DatabaseService>(ctx, listen: false),
+            Provider.of<AuthService>(ctx, listen: false),
+          ),
+          update: (ctx, db, auth, prev) => prev ?? BarbeiroController(db, auth),
         ),
       ],
       child: const MyApp(),

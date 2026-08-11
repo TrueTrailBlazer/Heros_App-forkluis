@@ -1,76 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/servico_model.dart';
 import '../../services/auth_service.dart';
-import '../../services/database_service.dart';
+import '../../controllers/barbeiro_controller.dart';
 import '../auth/login_screen.dart';
 import '../../utils/formatters.dart';
 
-class BarbeiroHomeScreen extends StatefulWidget {
+class BarbeiroHomeScreen extends StatelessWidget {
   const BarbeiroHomeScreen({super.key});
 
-  @override
-  State<BarbeiroHomeScreen> createState() => _BarbeiroHomeScreenState();
-}
-
-class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
-  late DatabaseService _db;
-  final List<Map<String, dynamic>> _servicosSelecionados = [];
-  String _formaPagamento = 'PIX';
-  bool _salvando = false;
-  late final Stream<List<ServicoModel>> _servicosStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _db = Provider.of<DatabaseService>(context, listen: false);
-    _servicosStream = _db.getServicos();
-  }
-
-  double get _valorTotal => _servicosSelecionados.fold(0, (sum, item) => sum + (item['preco'] as num).toDouble());
-  double get _comissaoExtra => _servicosSelecionados.fold(0, (sum, item) => sum + (item['comissao'] as num).toDouble());
-
-  void _adicionarServico(String nome, double preco, double comissao) {
-    setState(() => _servicosSelecionados.add({'nome': nome, 'preco': preco, 'comissao': comissao}));
-  }
-
-  void _removerServico(int index) {
-    setState(() => _servicosSelecionados.removeAt(index));
-  }
-
-  void _finalizarAtendimento() async {
-    if (_servicosSelecionados.isEmpty) return;
-    setState(() => _salvando = true);
-
-    final auth = Provider.of<AuthService>(context, listen: false);
-    List<String> nomesServicos = _servicosSelecionados.map((s) => s['nome'].toString()).toList();
-
-    await _db.registrarCorte(
-      barbeiroNome: auth.usuarioAtual?.nome ?? 'Barbeiro',
-      barbeiroId: auth.usuarioAtual?.id ?? '',
-      servicosFeitos: nomesServicos,
-      valorTotal: _valorTotal,
-      comissaoProdutos: _comissaoExtra,
-      formaPagamento: _formaPagamento,
-    );
-
-    setState(() {
-      _servicosSelecionados.clear();
-      _salvando = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Atendimento finalizado!'), backgroundColor: Colors.black));
-    }
-  }
-
-  void _abrirCarrinhoBottomSheet() {
+  void _abrirCarrinhoBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
+      builder: (context) => Consumer<BarbeiroController>(
+        builder: (context, controller, child) {
           return Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -86,7 +30,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                   const SizedBox(height: 16),
                   const Text('CARRINHO DO CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF737784), letterSpacing: 1.2)),
                   const SizedBox(height: 16),
-                  if (_servicosSelecionados.isEmpty)
+                  if (controller.servicosSelecionados.isEmpty)
                     const Padding(padding: EdgeInsets.all(24.0), child: Text('O carrinho está vazio.', style: TextStyle(color: Color(0xFF737784))))
                   else
                     Container(
@@ -94,10 +38,10 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _servicosSelecionados.length,
+                        itemCount: controller.servicosSelecionados.length,
                         separatorBuilder: (context, index) => Divider(height: 16, color: Theme.of(context).colorScheme.surfaceVariant),
                         itemBuilder: (context, index) {
-                          var item = _servicosSelecionados[index];
+                          var item = controller.servicosSelecionados[index];
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -109,9 +53,8 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                                   GestureDetector(
                                     behavior: HitTestBehavior.opaque,
                                     onTap: () {
-                                      _removerServico(index);
-                                      setModalState(() {});
-                                      if (_servicosSelecionados.isEmpty) Navigator.pop(context);
+                                      controller.removerServico(index);
+                                      if (controller.servicosSelecionados.isEmpty) Navigator.pop(context);
                                     },
                                     child: const Padding(padding: EdgeInsets.all(4.0), child: Icon(Icons.remove_circle_outline, color: Color(0xFFB22222), size: 26)),
                                   )
@@ -122,7 +65,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                         },
                       ),
                     ),
-                  if (_servicosSelecionados.isNotEmpty) ...[
+                  if (controller.servicosSelecionados.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: const BoxDecoration(
@@ -135,12 +78,12 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text('TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF737784), letterSpacing: 1.2)),
-                              Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
+                              Text('R\$ ${Formatters.moeda(controller.valorTotal)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF006400))),
                             ],
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: _formaPagamento,
+                            value: controller.formaPagamento,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
@@ -149,19 +92,22 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                               fillColor: Colors.white,
                             ),
                             items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)))).toList(),
-                            onChanged: (v) {
-                              _formaPagamento = v!;
-                              setModalState(() {});
-                              setState(() {});
-                            },
+                            onChanged: (v) => controller.setFormaPagamento(v!),
                           ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: _salvando ? null : () {
-                                Navigator.pop(context);
-                                _finalizarAtendimento();
+                              onPressed: controller.salvando ? null : () async {
+                                String? err = await controller.finalizarAtendimento();
+                                if (context.mounted) {
+                                  Navigator.pop(context); // fecha modal
+                                  if (err == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Atendimento finalizado!'), backgroundColor: Colors.black));
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err'), backgroundColor: const Color(0xFFBA1A1A)));
+                                  }
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).primaryColor,
@@ -169,7 +115,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
-                              child: _salvando 
+                              child: controller.salvando 
                                   ? const CircularProgressIndicator(color: Colors.white)
                                   : const Text('FINALIZAR ATENDIMENTO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
                             ),
@@ -190,6 +136,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final controller = context.watch<BarbeiroController>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -200,7 +147,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           children: [
             Image.asset('assets/appbar-icon.png', height: 28, errorBuilder: (context, error, stackTrace) => const Icon(Icons.content_cut, size: 24, color: Colors.white)),
             const SizedBox(width: 12),
-            Expanded(child: Text("Hero's - ${authService.usuarioAtual?.nome}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
+            Expanded(child: Text("Hero's - ${authService.usuarioAtual?.nome ?? ''}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis)),
           ],
         ),
         actions: [
@@ -231,18 +178,21 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           )
         ],
       ),
-      body: StreamBuilder<List<ServicoModel>>(
-        stream: _servicosStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
-          final servicos = snapshot.data!;
+      body: Builder(
+        builder: (context) {
+          if (controller.isLoadingServicos) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (controller.erroServicos != null) {
+            return Center(child: Text('Erro DB: ${controller.erroServicos}', style: const TextStyle(color: Colors.red)));
+          }
+          
+          final servicos = controller.servicos;
           
           if (servicos.isEmpty) return const Center(child: Text('Nenhum serviço cadastrado.', style: TextStyle(color: Colors.grey)));
 
           return ListView.separated(
-            padding: EdgeInsets.only(bottom: _servicosSelecionados.isNotEmpty ? 100 : 20),
+            padding: EdgeInsets.only(bottom: controller.servicosSelecionados.isNotEmpty ? 100 : 20),
             itemCount: servicos.length,
             separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
             itemBuilder: (context, index) {
@@ -257,7 +207,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                   subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
                   trailing: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => _adicionarServico(servico.nome, servico.preco, comissao),
+                    onTap: () => controller.adicionarServico(servico.nome, servico.preco, comissao),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
@@ -270,8 +220,8 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           );
         },
       ),
-      bottomNavigationBar: _servicosSelecionados.isEmpty ? null : GestureDetector(
-        onTap: _abrirCarrinhoBottomSheet,
+      bottomNavigationBar: controller.servicosSelecionados.isEmpty ? null : GestureDetector(
+        onTap: () => _abrirCarrinhoBottomSheet(context),
         child: Container(
           color: Theme.of(context).primaryColor,
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
@@ -284,8 +234,8 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${_servicosSelecionados.length} Iten${_servicosSelecionados.length > 1 ? 's' : ''}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    Text('R\$ ${Formatters.moeda(_valorTotal)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text('${controller.servicosSelecionados.length} Iten${controller.servicosSelecionados.length > 1 ? 's' : ''}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    Text('R\$ ${Formatters.moeda(controller.valorTotal)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                   ],
                 ),
                 Row(
