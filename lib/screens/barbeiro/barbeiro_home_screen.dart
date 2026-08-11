@@ -84,6 +84,8 @@ class BarbeiroHomeScreen extends StatelessWidget {
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: controller.formaPagamento,
+                            dropdownColor: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
                             decoration: InputDecoration(
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
@@ -199,20 +201,37 @@ class BarbeiroHomeScreen extends StatelessWidget {
               var servico = servicos[index];
               double comissao = servico.comissao;
               
+              int quantidade = controller.servicosSelecionados.where((s) => s['nome'] == servico.nome).length;
+
               return Container(
                 color: Colors.white,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Text(servico.nome, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                   subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
-                  trailing: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => controller.adicionarServico(servico.nome, servico.preco, comissao),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
-                      child: Icon(Icons.add, color: Theme.of(context).primaryColor, size: 20),
-                    ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (quantidade > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text('$quantidade', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => controller.adicionarServico(servico.nome, servico.preco, comissao),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
+                          child: Icon(Icons.add, color: Theme.of(context).primaryColor, size: 20),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
