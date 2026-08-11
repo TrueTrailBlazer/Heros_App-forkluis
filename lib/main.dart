@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF5F5F5), // bg-surface-background
-        primaryColor: const Color(0xFF0047AB), // primary-container (Azul Cobalto)
+        primaryColor: const Color(0xFF1B1B1B), // primary-container (Preto)
         
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1B1B1B), // bg-on-surface
@@ -80,14 +80,14 @@ class MyApp extends StatelessWidget {
           fillColor: const Color(0xFFF9F9F9),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0047AB), width: 1.5)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1B1B1B), width: 1.5)),
           labelStyle: const TextStyle(color: Color(0xFF737784)),
         ),
 
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0047AB),
-          primary: const Color(0xFF0047AB),
-          secondary: const Color(0xFF1B1B1B),
+          seedColor: const Color(0xFF1B1B1B),
+          primary: const Color(0xFF1B1B1B),
+          secondary: const Color(0xFFBA1A1A), // Vermelho
           surface: const Color(0xFFF5F5F5),
           onSurface: const Color(0xFF1B1B1B),
           error: const Color(0xFFBA1A1A),
