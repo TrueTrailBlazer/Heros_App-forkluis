@@ -209,29 +209,41 @@ class BarbeiroHomeScreen extends StatelessWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Text(servico.nome, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                   subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (quantidade > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          margin: const EdgeInsets.only(right: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(12),
+                  trailing: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: quantidade > 0 ? () {
+                            int idx = controller.servicosSelecionados.lastIndexWhere((s) => s['nome'] == servico.nome);
+                            if (idx != -1) controller.removerServico(idx);
+                          } : null,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Icon(Icons.remove, color: quantidade > 0 ? const Color(0xFFBA1A1A) : Colors.grey.shade300, size: 20),
                           ),
-                          child: Text('$quantidade', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                         ),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => controller.adicionarServico(servico.nome, servico.preco, comissao),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
-                          child: Icon(Icons.add, color: Theme.of(context).primaryColor, size: 20),
+                        SizedBox(
+                          width: 20,
+                          child: Center(
+                            child: Text(quantidade > 0 ? '$quantidade' : ' ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ),
                         ),
-                      ),
-                    ],
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => controller.adicionarServico(servico.nome, servico.preco, comissao),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Icon(Icons.add, color: Colors.black, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
