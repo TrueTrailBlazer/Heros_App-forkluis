@@ -217,23 +217,25 @@ class BarbeiroHomeScreen extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: quantidade > 0 ? () {
-                            int idx = controller.servicosSelecionados.lastIndexWhere((s) => s['nome'] == servico.nome);
-                            if (idx != -1) controller.removerServico(idx);
-                          } : null,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Icon(Icons.remove, color: quantidade > 0 ? const Color(0xFFBA1A1A) : Colors.grey.shade300, size: 20),
+                        if (quantidade > 0) ...[
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              int idx = controller.servicosSelecionados.lastIndexWhere((s) => s['nome'] == servico.nome);
+                              if (idx != -1) controller.removerServico(idx);
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Icon(Icons.remove, color: Color(0xFFBA1A1A), size: 20),
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                          width: 20,
-                          child: Center(
-                            child: Text(quantidade > 0 ? '$quantidade' : ' ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(
+                            width: 20,
+                            child: Center(
+                              child: Text('$quantidade', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
                           ),
-                        ),
+                        ],
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => controller.adicionarServico(servico.nome, servico.preco, comissao),
