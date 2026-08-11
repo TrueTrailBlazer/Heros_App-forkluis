@@ -189,4 +189,4 @@ void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nom
       ),
     ),
   );
-
+}

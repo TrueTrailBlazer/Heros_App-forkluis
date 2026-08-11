@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 
-import '../../services/auth_service.dart';
-import '../../models/usuario_model.dart';
+import '../services/auth_service.dart';
+import '../models/usuario_model.dart';
 import 'auth/login_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'barbeiro/barbeiro_home_screen.dart';

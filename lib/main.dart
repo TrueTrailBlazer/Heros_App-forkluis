@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 // Importe os caminhos corretos de acordo com as pastas do seu projeto
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
+import 'controllers/admin_controller.dart';
 
 import 'firebase_options.dart';
 
@@ -20,6 +21,10 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         Provider<DatabaseService>(create: (_) => DatabaseService()),
+        ChangeNotifierProxyProvider<DatabaseService, AdminController>(
+          create: (ctx) => AdminController(Provider.of<DatabaseService>(ctx, listen: false)),
+          update: (ctx, db, prev) => prev ?? AdminController(db),
+        ),
       ],
       child: const MyApp(),
     ),
