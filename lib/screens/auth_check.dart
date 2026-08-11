@@ -50,8 +50,7 @@ class _AuthCheckState extends State<AuthCheck> {
         if (didAuthenticate) {
           _entrarNoApp(user);
         } else {
-          // Se o usuário cancelar a digital, desloga por segurança
-          await FirebaseAuth.instance.signOut();
+          // Se o usuário cancelar a digital, redireciona para o login sem deslogar
           if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
         }
       } else {

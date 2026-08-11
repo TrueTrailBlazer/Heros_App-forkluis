@@ -29,12 +29,15 @@ class DatabaseService {
     });
   }
 
-  Stream<List<CorteModel>> getTodosOsCortes() {
-    return _firestore
-        .collection('cortes')
+  Stream<List<CorteModel>> getTodosOsCortes({DateTime? dataInicio}) {
+    Query query = _firestore.collection('cortes');
+    if (dataInicio != null) {
+      query = query.where('data', isGreaterThanOrEqualTo: dataInicio);
+    }
+    return query
         .orderBy('data', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => CorteModel.fromDoc(doc)).toList());
+        .map((snap) => snap.docs.map((doc) => CorteModel.fromDoc(doc as DocumentSnapshot<Map<String, dynamic>>)).toList());
   }
 
   // --- SERVIÇOS E PRODUTOS ---

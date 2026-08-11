@@ -57,4 +57,5 @@ class AuthService extends ChangeNotifier {
     usuarioAtual = null;
     notifyListeners();
   }
-}
+}
+

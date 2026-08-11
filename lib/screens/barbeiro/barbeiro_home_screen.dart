@@ -94,16 +94,16 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                         shrinkWrap: true,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         itemCount: _servicosSelecionados.length,
-                        separatorBuilder: (context, index) => const Divider(height: 16, color: Color(0xFFE0E0E0)),
+                        separatorBuilder: (context, index) => Divider(height: 16, color: Theme.of(context).colorScheme.surfaceVariant),
                         itemBuilder: (context, index) {
                           var item = _servicosSelecionados[index];
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Expanded(child: Text(item['nome'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF1B1B1B)), overflow: TextOverflow.ellipsis)),
+                              Expanded(child: Text(item['nome'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis)),
                               Row(
                                 children: [
-                                  Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                                  Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                                   const SizedBox(width: 12),
                                   GestureDetector(
                                     behavior: HitTestBehavior.opaque,
@@ -126,7 +126,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: const BoxDecoration(
                         color: Color(0xFFF9F9F9),
-                        border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
+                        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                       ),
                       child: Column(
                         children: [
@@ -141,13 +141,13 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                           DropdownButtonFormField<String>(
                             value: _formaPagamento,
                             decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                               filled: true,
                               fillColor: Colors.white,
                             ),
-                            items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
+                            items: ['PIX', 'Dinheiro', 'Cartão', 'Fiado'].map((f) => DropdownMenuItem(value: f, child: Text(f, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)))).toList(),
                             onChanged: (v) {
                               _formaPagamento = v!;
                               setModalState(() {});
@@ -163,7 +163,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                                 _finalizarAtendimento();
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1B1B1B),
+                                backgroundColor: Theme.of(context).primaryColor,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -193,7 +193,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B1B1B),
+        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         title: Row(
           children: [
@@ -210,7 +210,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                 context: context,
                 builder: (context) => AlertDialog(
                   backgroundColor: Colors.white,
-                  title: const Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                  title: Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                   content: const Text('Tem certeza que deseja sair da sua conta?', style: TextStyle(color: Color(0xFF737784))),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
@@ -243,7 +243,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
           return ListView.separated(
             padding: EdgeInsets.only(bottom: _servicosSelecionados.isNotEmpty ? 100 : 20),
             itemCount: servicos.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+            separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
             itemBuilder: (context, index) {
               var servico = servicos[index];
               double comissao = servico.comissao;
@@ -252,7 +252,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                 color: Colors.white,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  title: Text(servico.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                  title: Text(servico.nome, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                   subtitle: Text('R\$ ${Formatters.moeda(servico.preco)}${comissao > 0 ? ' (Ganha R\$ $comissao)' : ''}', style: const TextStyle(color: Color(0xFF737784))),
                   trailing: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -260,7 +260,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.add, color: Color(0xFF1B1B1B), size: 20),
+                      child: Icon(Icons.add, color: Theme.of(context).primaryColor, size: 20),
                     ),
                   ),
                 ),
@@ -272,7 +272,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
       bottomNavigationBar: _servicosSelecionados.isEmpty ? null : GestureDetector(
         onTap: _abrirCarrinhoBottomSheet,
         child: Container(
-          color: const Color(0xFF1B1B1B),
+          color: Theme.of(context).primaryColor,
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

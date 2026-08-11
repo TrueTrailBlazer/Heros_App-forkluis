@@ -15,6 +15,8 @@ import '../../models/usuario_model.dart';
 import '../../widgets/dialogs.dart';
 import '../../utils/formatters.dart';
 
+import '../../controllers/admin_controller.dart';
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
   @override
@@ -33,7 +35,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          border: Border(top: BorderSide(color: Color(0xFF1B1B1B), width: 2)),
+          border: Border(top: BorderSide(color: Theme.of(context).primaryColor, width: 2)),
         ),
         child: SafeArea(
           child: Column(
@@ -45,11 +47,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
+                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant))),
                 child: const Text('O QUE VOCÊ DESEJA ADICIONAR?', style: TextStyle(color: Color(0xFF737784), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
               ),
-              _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, const Color(0xFF2559BD), () { Navigator.pop(context); mostrarDialogServico(context); }),
-              _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, const Color(0xFFB22222), () { Navigator.pop(context); mostrarDialogDespesa(context); }),
+              _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, const Color(0xFF2559BD), () { 
+                Navigator.pop(context); 
+                mostrarDialogServico(context, onSalvar: (nome, preco, comissao) {
+                  DatabaseService().addServico(nome, preco, comissao);
+                }); 
+              }),
+              _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, const Color(0xFFB22222), () { 
+                Navigator.pop(context); 
+                mostrarDialogDespesa(context, onSalvar: (descricao, valor) {
+                  DatabaseService().registrarDespesaVale('Despesa da Loja', descricao, valor);
+                }); 
+              }),
               _buildMenuItem(context, 'Novo Barbeiro', Icons.person_add, const Color(0xFF2E4A35), () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); }, isLast: true),
               const SizedBox(height: 4),
             ],
@@ -64,12 +76,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
+        decoration: BoxDecoration(border: isLast ? null : Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant))),
         child: Row(
           children: [
             Icon(icon, color: iconColor, size: 32),
             const SizedBox(width: 16),
-            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B)))),
+            Expanded(child: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor))),
             const Icon(Icons.arrow_forward, color: Color(0xFFCFC4C5)),
           ],
         ),
@@ -85,8 +97,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(isSelected ? iconFilled : iconOutline, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784)),
-          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? const Color(0xFF1B1B1B) : const Color(0xFF737784), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+          Icon(isSelected ? iconFilled : iconOutline, color: isSelected ? Theme.of(context).primaryColor : Color(0xFF737784)),
+          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Theme.of(context).primaryColor : Color(0xFF737784), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );
@@ -100,7 +112,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5), // surface-background do Stitch
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B1B1B),
+        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         title: Row(
           children: [
@@ -117,7 +129,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 context: context,
                 builder: (context) => AlertDialog(
                   backgroundColor: Colors.white,
-                  title: const Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                  title: Text('Sair da conta', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                   content: const Text('Tem certeza que deseja sair da sua conta?', style: TextStyle(color: Color(0xFF737784))),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
@@ -155,7 +167,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               height: 64,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
+                border: Border(top: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
               ),
               child: Row(
                 children: [
@@ -178,7 +190,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 width: 64,
                 height: 64,
                 child: FloatingActionButton(
-                  backgroundColor: const Color(0xFF1B1B1B),
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 6,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
@@ -197,35 +209,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 // ==========================================
 // ABA 1: RELATÓRIOS E AVISOS
 // ==========================================
-class AbaRelatorios extends StatelessWidget {
+class AbaRelatorios extends StatefulWidget {
   const AbaRelatorios({super.key});
+
+  @override
+  State<AbaRelatorios> createState() => _AbaRelatoriosState();
+}
+
+class _AbaRelatoriosState extends State<AbaRelatorios> {
+  late Stream<List<CorteModel>> _streamCortes;
+  late Stream<List<UsuarioModel>> _streamBarbeiros;
+  final AdminController _adminController = AdminController();
+
+  @override
+  void initState() {
+    super.initState();
+    DateTime inicioHoje = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    _streamCortes = DatabaseService().getTodosOsCortes(dataInicio: inicioHoje);
+    _streamBarbeiros = DatabaseService().getBarbeiros();
+  }
 
   Widget _buildBotao(BuildContext context, String titulo, String tipo, IconData icone) {
     return GestureDetector(behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetalheRelatorioScreen(tipo: tipo, titulo: titulo))),
       child: Container(
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0)))),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant))),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Row(
           children: [
-            Icon(icone, color: const Color(0xFF1B1B1B), size: 24),
+            Icon(icone, color: Theme.of(context).primaryColor, size: 24),
             const SizedBox(width: 16),
-            Text('Relatório $titulo', style: const TextStyle(color: Color(0xFF1B1B1B), fontSize: 16, fontWeight: FontWeight.normal)),
+            Text('Relatório $titulo', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 16, fontWeight: FontWeight.normal)),
           ],
         ),
       ),
     );
-  }
-
-  bool _precisaPagar(String diaPagamento, Timestamp? ultimoPag) {
-    int hoje = DateTime.now().weekday;
-    Map<String, int> dias = {'Segunda': 1, 'Terça': 2, 'Quarta': 3, 'Quinta': 4, 'Sexta': 5, 'Sábado': 6, 'Domingo': 7};
-    int diaAlvo = dias[diaPagamento] ?? 6;
-    int ontem = hoje - 1;
-    if (ontem == 0) ontem = 7;
-    if (hoje != diaAlvo && ontem != diaAlvo) return false;
-    if (ultimoPag != null && DateTime.now().difference(ultimoPag.toDate()).inDays < 3) return false;
-    return true;
   }
 
   @override
@@ -235,17 +253,14 @@ class AbaRelatorios extends StatelessWidget {
       children: [
         // Faturamento Bruto
         StreamBuilder<List<CorteModel>>(
-          stream: DatabaseService().getTodosOsCortes(),
+          stream: _streamCortes,
           builder: (context, snapshot) {
             if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
             if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
             double lucroHoje = 0;
             int qtdServicos = 0;
             if (snapshot.hasData) {
-              DateTime inicioHoje = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-              var cortesHoje = snapshot.data!.where((corte) {
-                return corte.data.isAfter(inicioHoje) || corte.data.isAtSameMomentAs(inicioHoje);
-              }).toList();
+              var cortesHoje = snapshot.data!;
               qtdServicos = cortesHoje.length;
               lucroHoje = cortesHoje.fold(0, (s, corte) => s + corte.valor);
             }
@@ -253,7 +268,7 @@ class AbaRelatorios extends StatelessWidget {
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE0E0E0))),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant)),
               child: Column(
                 children: [
                   const Text('Faturamento Bruto', style: TextStyle(color: Color(0xFF737784), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
@@ -276,7 +291,7 @@ class AbaRelatorios extends StatelessWidget {
 
         // Acerto Pendente
         StreamBuilder<List<UsuarioModel>>(
-          stream: DatabaseService().getBarbeiros(),
+          stream: _streamBarbeiros,
           builder: (context, snapshot) {
             if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
             if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -289,7 +304,7 @@ class AbaRelatorios extends StatelessWidget {
               String diaPag = b.diaPagamento ?? 'Sábado';
               Timestamp? ultimoPag = b.ultimoPagamento;
 
-              if (_precisaPagar(diaPag, ultimoPag)) {
+              if (_adminController.precisaPagar(diaPag, ultimoPag)) {
                 alertas.add(
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -299,9 +314,9 @@ class AbaRelatorios extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: const Border(
                         left: BorderSide(color: Color(0xFFBA1A1A), width: 4),
-                        top: BorderSide(color: Color(0xFFE0E0E0)),
-                        right: BorderSide(color: Color(0xFFE0E0E0)),
-                        bottom: BorderSide(color: Color(0xFFE0E0E0)),
+                        top: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant),
+                        right: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant),
+                        bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant),
                       ),
                     ),
                     child: Column(
@@ -326,7 +341,7 @@ class AbaRelatorios extends StatelessWidget {
                             const SizedBox(width: 24),
                             GestureDetector(behavior: HitTestBehavior.opaque,
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcertoBarbeiroScreen(nomeBarbeiro: nome, diaPagamento: diaPag))),
-                              child: const Text('Ver Detalhes', style: TextStyle(color: Color(0xFF1B1B1B), fontWeight: FontWeight.bold, fontSize: 16)),
+                              child: Text('Ver Detalhes', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                           ],
                         )
@@ -342,15 +357,15 @@ class AbaRelatorios extends StatelessWidget {
 
         // Relatórios
         Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE0E0E0))),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant)),
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               shape: const Border(),
               collapsedShape: const Border(),
-              title: const Text('Gerar Relatórios', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
-              iconColor: const Color(0xFF1B1B1B),
-              collapsedIconColor: const Color(0xFF1B1B1B),
+              title: Text('Gerar Relatórios', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+              iconColor: Theme.of(context).primaryColor,
+              collapsedIconColor: Theme.of(context).primaryColor,
               children: [
                 _buildBotao(context, 'Diário', 'Hoje', Icons.today),
                 _buildBotao(context, 'Semanal', 'Semana', Icons.calendar_view_week),
@@ -378,6 +393,23 @@ class DetalheRelatorioScreen extends StatefulWidget {
 class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
   final DatabaseService _db = DatabaseService();
   String _barbeiroSelecionado = 'Todos';
+  late Stream<List<CorteModel>> _streamCortes;
+
+  @override
+  void initState() {
+    super.initState();
+    DateTime agora = DateTime.now();
+    DateTime inicioHoje = DateTime(agora.year, agora.month, agora.day);
+    DateTime inicioSemana = inicioHoje.subtract(Duration(days: agora.weekday - 1));
+    DateTime inicioMes = DateTime(agora.year, agora.month, 1);
+    
+    DateTime dataFiltro;
+    if (widget.tipo == 'Hoje') dataFiltro = inicioHoje;
+    else if (widget.tipo == 'Semana') dataFiltro = inicioSemana;
+    else dataFiltro = inicioMes;
+
+    _streamCortes = _db.getTodosOsCortes(dataInicio: dataFiltro);
+  }
 
   Future<void> _exportarRelatorioPDF(List<CorteModel> cortes, double total) async {
     final pdf = pw.Document();
@@ -416,26 +448,17 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B1B1B),
+        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         title: Text('Relatório ${widget.titulo}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
       ),
       body: StreamBuilder<List<CorteModel>>(
-        stream: _db.getTodosOsCortes(),
+        stream: _streamCortes,
         builder: (context, snapshotCortes) {
           if (!snapshotCortes.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
           var cortes = snapshotCortes.data!;
-          DateTime agora = DateTime.now();
-          DateTime inicioHoje = DateTime(agora.year, agora.month, agora.day);
-          DateTime inicioSemana = inicioHoje.subtract(Duration(days: agora.weekday - 1));
-          DateTime inicioMes = DateTime(agora.year, agora.month, 1);
-
-          var cortesFiltrados = cortes.where((corte) {
-            DateTime d = corte.data;
-            if (widget.tipo == 'Hoje') return d.isAfter(inicioHoje) || d.isAtSameMomentAs(inicioHoje);
-            if (widget.tipo == 'Semana') return d.isAfter(inicioSemana) || d.isAtSameMomentAs(inicioSemana);
-            return d.isAfter(inicioMes) || d.isAtSameMomentAs(inicioMes);
-          }).toList();
+          
+          var cortesFiltrados = cortes; // Já vem filtrado do banco
 
           Set<String> nomesBarbeiros = {'Todos'};
           for (var c in cortesFiltrados) nomesBarbeiros.add(c.barbeiroNome);
@@ -450,7 +473,7 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+                  border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                 ),
                 child: Column(
                   children: [
@@ -459,12 +482,12 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
                       decoration: InputDecoration(
                         labelText: 'Filtrar por Barbeiro', 
                         labelStyle: const TextStyle(color: Color(0xFF737784)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                         filled: true, 
                         fillColor: Colors.white
                       ),
-                      items: nomesBarbeiros.map((n) => DropdownMenuItem(value: n, child: Text(n, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))))).toList(),
+                      items: nomesBarbeiros.map((n) => DropdownMenuItem(value: n, child: Text(n, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)))).toList(),
                       onChanged: (v) => setState(() => _barbeiroSelecionado = v!),
                     ),
                     const SizedBox(height: 20),
@@ -483,7 +506,7 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
                         label: const Text('Baixar PDF Oficial'),
                         onPressed: () => _exportarRelatorioPDF(cortesFinais, totalCaixa),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B1B1B), 
+                          backgroundColor: Theme.of(context).primaryColor, 
                           foregroundColor: Colors.white, 
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -502,13 +525,13 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                         ),
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: cortesFinais.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                          separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
                           itemBuilder: (context, index) {
                             var corte = cortesFinais[index];
                             List<String> servicos = corte.servicos;
@@ -521,14 +544,14 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8)),
-                                    child: const Icon(Icons.content_cut, color: Color(0xFF1B1B1B), size: 20),
+                                    child: Icon(Icons.content_cut, color: Theme.of(context).primaryColor, size: 20),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('${corte.barbeiroNome}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                        Text('${corte.barbeiroNome}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                                         const SizedBox(height: 4),
                                         Text("${servicos.join(" + ")}\nPag. ${corte.formaPagamento}", style: const TextStyle(fontSize: 13, color: Color(0xFF737784))),
                                       ],
@@ -537,7 +560,7 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      Text('R\$ ${Formatters.moeda(corte.valor)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                      Text('R\$ ${Formatters.moeda(corte.valor)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                                       const SizedBox(height: 4),
                                       Text(Formatters.dataHora(hora), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF737784), fontSize: 12)),
                                     ],
@@ -561,15 +584,28 @@ class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
 // ==========================================
 // ABAS DE SERVIÇOS E FINANCEIRO
 // ==========================================
-class AbaServicos extends StatelessWidget {
+class AbaServicos extends StatefulWidget {
   const AbaServicos({super.key});
+
+  @override
+  State<AbaServicos> createState() => _AbaServicosState();
+}
+
+class _AbaServicosState extends State<AbaServicos> {
+  late Stream<List<ServicoModel>> _streamServicos;
+
+  @override
+  void initState() {
+    super.initState();
+    _streamServicos = DatabaseService().getServicos();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFFF5F5F5),
       child: StreamBuilder<List<ServicoModel>>(
-        stream: DatabaseService().getServicos(),
+        stream: _streamServicos,
         builder: (context, snapshot) {
             if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
             if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -583,13 +619,13 @@ class AbaServicos extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: servicos.length,
-                separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
                 itemBuilder: (context, index) {
                   var servico = servicos[index];
                   double com = servico.comissao;
@@ -602,7 +638,7 @@ class AbaServicos extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(servico.nome, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+                              Text(servico.nome, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                               const SizedBox(height: 4),
                               Text('R\$ ${Formatters.moeda(servico.preco)}${com > 0 ? ' (Comissão: R\$ $com)' : ''}', style: const TextStyle(fontSize: 14, color: Color(0xFF737784))),
                             ],
@@ -612,7 +648,9 @@ class AbaServicos extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             GestureDetector(behavior: HitTestBehavior.opaque,
-                              onTap: () => mostrarDialogServico(context, id: servico.id, nomeAtual: servico.nome, precoAtual: servico.preco, comissaoAtual: com),
+                              onTap: () => mostrarDialogServico(context, id: servico.id, nomeAtual: servico.nome, precoAtual: servico.preco, comissaoAtual: com, onSalvar: (nome, preco, comissao) {
+                                DatabaseService().updateServico(servico.id, nome, preco, comissao);
+                              }),
                               child: const Icon(Icons.edit, color: Color(0xFF737784)),
                             ),
                             const SizedBox(width: 16),
@@ -650,6 +688,13 @@ class AbaFinanceiro extends StatefulWidget {
 
 class _AbaFinanceiroState extends State<AbaFinanceiro> {
   String _filtroMes = 'Mês Atual';
+  late Stream<List<DespesaModel>> _streamDespesas;
+
+  @override
+  void initState() {
+    super.initState();
+    _streamDespesas = DatabaseService().getDespesasEVales();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -666,7 +711,7 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -677,7 +722,7 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                     focusColor: Colors.transparent, // Remove as linhas pretas de foco
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.normal, color: Color(0xFF1B1B1B))))).toList(),
+                    items: ['Mês Atual', 'Mês Passado', 'Todos'].map((n) => DropdownMenuItem(value: n, child: Text(n, style: TextStyle(fontWeight: FontWeight.normal, color: Theme.of(context).primaryColor)))).toList(),
                     onChanged: (v) => setState(() => _filtroMes = v!),
                   ),
                 ),
@@ -686,7 +731,7 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
           ),
           Expanded(
             child: StreamBuilder<List<DespesaModel>>(
-              stream: DatabaseService().getDespesasEVales(),
+              stream: _streamDespesas,
               builder: (context, snapshot) {
             if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
             if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -709,13 +754,13 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                      border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                     ),
                     child: ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: itens.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                      separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
                       itemBuilder: (context, index) {
                         var despesa = itens[index];
                         DateTime data = despesa.data;
@@ -731,7 +776,7 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(despesa.descricao, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                      Text(despesa.descricao, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                                       const SizedBox(height: 4),
                                       Text(Formatters.dataLonga(data), style: const TextStyle(fontSize: 12, color: Color(0xFF737784))),
                                     ],

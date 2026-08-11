@@ -12,12 +12,20 @@ class EquipeScreen extends StatefulWidget {
 }
 
 class _EquipeScreenState extends State<EquipeScreen> {
+  late Stream<List<UsuarioModel>> _streamBarbeiros;
+
+  @override
+  void initState() {
+    super.initState();
+    _streamBarbeiros = DatabaseService().getBarbeiros();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFFF5F5F5),
       child: StreamBuilder<List<UsuarioModel>>(
-        stream: DatabaseService().getBarbeiros(),
+        stream: _streamBarbeiros,
         builder: (context, snapshot) {
             if (snapshot.hasError) return Center(child: Text('Erro DB: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
             if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -31,13 +39,13 @@ class _EquipeScreenState extends State<EquipeScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: barbeiros.length,
-                separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
                 itemBuilder: (context, index) {
                   var barbeiro = barbeiros[index];
                   String nome = barbeiro.nome;
@@ -56,7 +64,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1B1B1B),
+                                  color: Theme.of(context).primaryColor,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Center(
@@ -70,7 +78,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                  Text(nome, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                                   const SizedBox(height: 4),
                                   Text('Acerto: $diaPag', style: const TextStyle(fontSize: 14, color: Color(0xFF737784))),
                                 ],
@@ -86,7 +94,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                                    border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(Icons.edit, color: Color(0xFF737784), size: 20),
@@ -100,7 +108,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                                     builder: (context) => AlertDialog(
                                       backgroundColor: Colors.white,
                                       surfaceTintColor: Colors.white,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                                       title: const Text('Desativar Barbeiro', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFBA1A1A))),
                                       content: Text('Tem certeza que deseja desativar o barbeiro "$nome"? Ele perderá o acesso ao app.'),
                                       actions: [
@@ -121,7 +129,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                                    border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(Icons.delete, color: Color(0xFFB22222), size: 20),
@@ -143,31 +151,43 @@ class _EquipeScreenState extends State<EquipeScreen> {
   }
 }
 
-class AcertoBarbeiroScreen extends StatelessWidget {
+class AcertoBarbeiroScreen extends StatefulWidget {
   final String nomeBarbeiro;
   final String diaPagamento;
-  AcertoBarbeiroScreen({super.key, required this.nomeBarbeiro, required this.diaPagamento});
+  const AcertoBarbeiroScreen({super.key, required this.nomeBarbeiro, required this.diaPagamento});
   
+  @override
+  State<AcertoBarbeiroScreen> createState() => _AcertoBarbeiroScreenState();
+}
+
+class _AcertoBarbeiroScreenState extends State<AcertoBarbeiroScreen> {
   final DatabaseService _db = DatabaseService();
+  late Stream<List<CorteModel>> _streamCortes;
+
+  @override
+  void initState() {
+    super.initState();
+    _streamCortes = _db.getTodosOsCortes();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B1B1B),
+        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
-        title: Text('Caixa: $nomeBarbeiro', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text('Caixa: ${widget.nomeBarbeiro}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
       body: StreamBuilder<List<CorteModel>>(
-        stream: _db.getTodosOsCortes(),
+        stream: _streamCortes,
         builder: (context, snapshotCortes) {
           if (!snapshotCortes.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
 
           // A LÓGICA DE DATAS: Pega os ganhos do "Último Dia de Pagamento" até Agora.
           int hoje = DateTime.now().weekday; // 1=Segunda, 7=Domingo
           Map<String, int> diasSemana = {'Segunda': 1, 'Terça': 2, 'Quarta': 3, 'Quinta': 4, 'Sexta': 5, 'Sábado': 6, 'Domingo': 7};
-          int diaAlvo = diasSemana[diaPagamento] ?? 6;
+          int diaAlvo = diasSemana[widget.diaPagamento] ?? 6;
 
           int diffDias = hoje - diaAlvo;
           if (diffDias < 0) diffDias += 7;
@@ -177,7 +197,7 @@ class AcertoBarbeiroScreen extends StatelessWidget {
           DateTime inicioCiclo = DateTime(agora.year, agora.month, agora.day).subtract(Duration(days: diffDias));
 
           var cortes = snapshotCortes.data!.where((corte) {
-            if (corte.barbeiroNome != nomeBarbeiro) return false;
+            if (corte.barbeiroNome != widget.nomeBarbeiro) return false;
             return corte.data.isAfter(inicioCiclo) || corte.data.isAtSameMomentAs(inicioCiclo);
           }).toList();
 
@@ -195,16 +215,16 @@ class AcertoBarbeiroScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.event_available, color: Color(0xFF1B1B1B), size: 24),
+                          Icon(Icons.event_available, color: Theme.of(context).primaryColor, size: 24),
                           const SizedBox(width: 8),
-                          Text('Toda(o) $diaPagamento', style: const TextStyle(color: Color(0xFF1B1B1B), fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text('Toda(o) ${widget.diaPagamento}', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 14, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -233,13 +253,13 @@ class AcertoBarbeiroScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          border: Border.all(color: Theme.of(context).colorScheme.surfaceVariant),
                         ),
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: cortes.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                          separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.surfaceVariant),
                           itemBuilder: (context, index) {
                             var corte = cortes[index];
                             DateTime data = corte.data;
@@ -255,13 +275,13 @@ class AcertoBarbeiroScreen extends StatelessWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(servicos.join(" + "), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                        Text(servicos.join(" + "), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                                         const SizedBox(height: 4),
                                         Text(Formatters.dataHora(data), style: const TextStyle(color: Color(0xFF737784), fontSize: 12)),
                                       ],
                                     ),
                                   ),
-                                  Text('R\$ ${Formatters.moeda(corte.valor + pomada)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B1B1B))),
+                                  Text('R\$ ${Formatters.moeda(corte.valor + pomada)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
                                 ],
                               ),
                             );

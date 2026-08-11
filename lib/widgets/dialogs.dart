@@ -12,9 +12,9 @@ void mostrarDialogConfirmacao(BuildContext context, {required String titulo, req
     builder: (context) => AlertDialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
       title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFBA1A1A))),
-      content: Text(mensagem, style: const TextStyle(color: Color(0xFF1B1B1B))),
+      content: Text(mensagem, style: TextStyle(color: Theme.of(context).primaryColor)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784)))),
         ElevatedButton(
@@ -31,7 +31,7 @@ void mostrarDialogConfirmacao(BuildContext context, {required String titulo, req
 }
 
 /// Modal para criar ou editar um Serviço/Produto.
-void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, double? precoAtual, double? comissaoAtual}) {
+void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, double? precoAtual, double? comissaoAtual, required Function(String, double, double) onSalvar}) {
   final nomeC = TextEditingController(text: nomeAtual);
   final precoC = TextEditingController(text: precoAtual?.toString());
   final comissaoC = TextEditingController(text: comissaoAtual?.toString() ?? '0');
@@ -40,8 +40,8 @@ void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, 
     builder: (context) => AlertDialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
-      title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar Serviço', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
+      title: Text(id == null ? 'Novo Serviço/Produto' : 'Editar Serviço', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -62,8 +62,7 @@ void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, 
             }
             double p = double.tryParse(precoC.text.replaceAll(',', '.')) ?? 0;
             double c = double.tryParse(comissaoC.text.replaceAll(',', '.')) ?? 0;
-            if (id == null) DatabaseService().addServico(nomeC.text.trim(), p, c);
-            else DatabaseService().updateServico(id, nomeC.text.trim(), p, c);
+            onSalvar(nomeC.text.trim(), p, c);
             Navigator.pop(context);
           },
           child: const Text('Salvar'),
@@ -74,7 +73,7 @@ void mostrarDialogServico(BuildContext context, {String? id, String? nomeAtual, 
 }
 
 /// Modal para lançar uma Despesa da loja.
-void mostrarDialogDespesa(BuildContext context) {
+void mostrarDialogDespesa(BuildContext context, {required Function(String, double) onSalvar}) {
   final descC = TextEditingController();
   final valorC = TextEditingController();
   showDialog(
@@ -82,8 +81,8 @@ void mostrarDialogDespesa(BuildContext context) {
     builder: (context) => AlertDialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
-      title: const Text('Nova Despesa', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
+      title: Text('Nova Despesa', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -102,7 +101,7 @@ void mostrarDialogDespesa(BuildContext context) {
               return;
             }
             double v = double.tryParse(valorC.text.replaceAll(',', '.')) ?? 0;
-            DatabaseService().registrarDespesaVale('Despesa da Loja', descC.text.trim(), v);
+            onSalvar(descC.text.trim(), v);
             Navigator.pop(context);
           },
           child: const Text('Lançar Despesa'),
@@ -128,8 +127,8 @@ void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nom
       builder: (context, setStateLocal) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE0E0E0))),
-        title: Text(id == null ? 'Novo Barbeiro' : 'Editar Barbeiro', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B1B1B))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
+        title: Text(id == null ? 'Novo Barbeiro' : 'Editar Barbeiro', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
