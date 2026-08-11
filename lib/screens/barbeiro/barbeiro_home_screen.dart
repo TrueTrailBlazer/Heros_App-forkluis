@@ -68,8 +68,8 @@ class BarbeiroHomeScreen extends StatelessWidget {
                   if (controller.servicosSelecionados.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF9F9F9),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9F9F9),
                         border: Border(top: BorderSide(color: Theme.of(context).colorScheme.surfaceVariant)),
                       ),
                       child: Column(
