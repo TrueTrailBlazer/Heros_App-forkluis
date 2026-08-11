@@ -33,37 +33,53 @@ class BarbeiroHomeScreen extends StatelessWidget {
                   if (controller.servicosSelecionados.isEmpty)
                     const Padding(padding: EdgeInsets.all(24.0), child: Text('O carrinho está vazio.', style: TextStyle(color: Color(0xFF737784))))
                   else
-                    Container(
-                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: controller.servicosSelecionados.length,
-                        separatorBuilder: (context, index) => Divider(height: 16, color: Theme.of(context).colorScheme.surfaceVariant),
-                        itemBuilder: (context, index) {
-                          var item = controller.servicosSelecionados[index];
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(child: Text(item['nome'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis)),
-                              Row(
+                    Builder(
+                      builder: (context) {
+                        Map<String, List<Map<String, dynamic>>> grouped = {};
+                        for (var s in controller.servicosSelecionados) {
+                          grouped.putIfAbsent(s['nome'], () => []).add(s);
+                        }
+                        var groupKeys = grouped.keys.toList();
+
+                        return Container(
+                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: groupKeys.length,
+                            separatorBuilder: (context, index) => Divider(height: 16, color: Theme.of(context).colorScheme.surfaceVariant),
+                            itemBuilder: (context, index) {
+                              var nome = groupKeys[index];
+                              var items = grouped[nome]!;
+                              var quantidade = items.length;
+                              var item = items.first;
+                              double totalItem = (item['preco'] as num).toDouble() * quantidade;
+
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('R\$ ${Formatters.moeda((item['preco'] as num).toDouble())}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-                                  const SizedBox(width: 12),
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      controller.removerServico(index);
-                                      if (controller.servicosSelecionados.isEmpty) Navigator.pop(context);
-                                    },
-                                    child: const Padding(padding: EdgeInsets.all(4.0), child: Icon(Icons.remove_circle_outline, color: Color(0xFFB22222), size: 26)),
+                                  Expanded(child: Text('${quantidade}x $nome', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis)),
+                                  Row(
+                                    children: [
+                                      Text('R\$ ${Formatters.moeda(totalItem)}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                                      const SizedBox(width: 12),
+                                      GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          int idx = controller.servicosSelecionados.lastIndexWhere((s) => s['nome'] == nome);
+                                          if (idx != -1) controller.removerServico(idx);
+                                          if (controller.servicosSelecionados.isEmpty) Navigator.pop(context);
+                                        },
+                                        child: const Padding(padding: EdgeInsets.all(4.0), child: Icon(Icons.remove_circle_outline, color: Color(0xFFB22222), size: 26)),
+                                      )
+                                    ],
                                   )
                                 ],
-                              )
-                            ],
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
+                        );
+                      }
                     ),
                   if (controller.servicosSelecionados.isNotEmpty) ...[
                     Container(
