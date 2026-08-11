@@ -1,3 +1,4 @@
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 
@@ -111,14 +112,13 @@ void mostrarDialogDespesa(BuildContext context, {required Function(String, doubl
   );
 }
 
-/// Modal para criar ou editar um Barbeiro (com criação de login).
-bool _isCreatingUserGlobal = false;
-
+/// Modal para gerenciar equipe (criar novo barbeiro ou editar existente).
 void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nomeAtual, String? diaPagAtual}) {
   final nomeC = TextEditingController(text: nomeAtual);
   final emailC = TextEditingController();
   final senhaC = TextEditingController();
   String diaPagamento = diaPagAtual ?? 'Sábado';
+  bool isCreatingUser = false;
 
   showDialog(
     context: context,
@@ -154,40 +154,39 @@ void mostrarDialogGerenciarEquipe(BuildContext context, {String? id, String? nom
         ),
         actions: [
           TextButton(
-            onPressed: _isCreatingUserGlobal ? null : () => Navigator.pop(context),
+            onPressed: isCreatingUser ? null : () => Navigator.pop(context),
             child: const Text('Cancelar', style: TextStyle(color: Color(0xFF737784))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
-            onPressed: _isCreatingUserGlobal ? null : () async {
+            onPressed: isCreatingUser ? null : () async {
               if (nomeC.text.trim().isEmpty) return;
               
-              setStateLocal(() => _isCreatingUserGlobal = true);
+              setStateLocal(() => isCreatingUser = true);
 
               if (id == null) {
                 if (emailC.text.isEmpty || senhaC.text.length < 6) {
                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email inválido ou senha muito curta (mín. 6).')));
-                   setStateLocal(() => _isCreatingUserGlobal = false);
+                   setStateLocal(() => isCreatingUser = false);
                    return;
                 }
-                String? erro = await DatabaseService().criarBarbeiroComLogin(nomeC.text.trim(), diaPagamento, emailC.text.trim(), senhaC.text.trim());
+                String? erro = await Provider.of<DatabaseService>(context, listen: false).criarBarbeiroComLogin(nomeC.text.trim(), diaPagamento, emailC.text.trim(), senhaC.text.trim());
                 if (erro != null) {
                    if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $erro')));
-                   setStateLocal(() => _isCreatingUserGlobal = false);
+                   setStateLocal(() => isCreatingUser = false);
                    return;
                 }
               } else {
-                await DatabaseService().updateBarbeiro(id, nomeC.text.trim(), diaPagamento);
+                await Provider.of<DatabaseService>(context, listen: false).updateBarbeiro(id, nomeC.text.trim(), diaPagamento);
               }
               
-              setStateLocal(() => _isCreatingUserGlobal = false);
+              setStateLocal(() => isCreatingUser = false);
               if(context.mounted) Navigator.pop(context);
             },
-            child: _isCreatingUserGlobal ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Salvar'),
+            child: isCreatingUser ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Salvar'),
           )
         ],
       ),
     ),
   );
-}
 

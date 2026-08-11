@@ -1,3 +1,4 @@
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import '../../services/database_service.dart';
 import '../../models/usuario_model.dart';
@@ -17,7 +18,8 @@ class _EquipeScreenState extends State<EquipeScreen> {
   @override
   void initState() {
     super.initState();
-    _streamBarbeiros = DatabaseService().getBarbeiros();
+    _db = Provider.of<DatabaseService>(context, listen: false);
+    _streamBarbeiros = Provider.of<DatabaseService>(context, listen: false).getBarbeiros();
   }
 
   @override
@@ -117,7 +119,7 @@ class _EquipeScreenState extends State<EquipeScreen> {
                                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBA1A1A), foregroundColor: Colors.white),
                                           onPressed: () {
                                             Navigator.pop(context);
-                                            DatabaseService().deleteBarbeiro(barbeiro.id);
+                                            Provider.of<DatabaseService>(context, listen: false).deleteBarbeiro(barbeiro.id);
                                           },
                                           child: const Text('Desativar'),
                                         )
@@ -161,12 +163,13 @@ class AcertoBarbeiroScreen extends StatefulWidget {
 }
 
 class _AcertoBarbeiroScreenState extends State<AcertoBarbeiroScreen> {
-  final DatabaseService _db = DatabaseService();
+  late DatabaseService _db;
   late Stream<List<CorteModel>> _streamCortes;
 
   @override
   void initState() {
     super.initState();
+    _db = Provider.of<DatabaseService>(context, listen: false);
     _streamCortes = _db.getTodosOsCortes();
   }
 

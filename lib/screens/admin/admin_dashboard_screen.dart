@@ -53,13 +53,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               _buildMenuItem(context, 'Novo Serviço', Icons.content_cut, const Color(0xFF2559BD), () { 
                 Navigator.pop(context); 
                 mostrarDialogServico(context, onSalvar: (nome, preco, comissao) {
-                  DatabaseService().addServico(nome, preco, comissao);
+                  Provider.of<DatabaseService>(context, listen: false).addServico(nome, preco, comissao);
                 }); 
               }),
               _buildMenuItem(context, 'Nova Despesa', Icons.receipt_long, const Color(0xFFB22222), () { 
                 Navigator.pop(context); 
                 mostrarDialogDespesa(context, onSalvar: (descricao, valor) {
-                  DatabaseService().registrarDespesaVale('Despesa da Loja', descricao, valor);
+                  Provider.of<DatabaseService>(context, listen: false).registrarDespesaVale('Despesa da Loja', descricao, valor);
                 }); 
               }),
               _buildMenuItem(context, 'Novo Barbeiro', Icons.person_add, const Color(0xFF2E4A35), () { Navigator.pop(context); mostrarDialogGerenciarEquipe(context); }, isLast: true),
@@ -224,9 +224,10 @@ class _AbaRelatoriosState extends State<AbaRelatorios> {
   @override
   void initState() {
     super.initState();
+    _db = Provider.of<DatabaseService>(context, listen: false);
     DateTime inicioHoje = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    _streamCortes = DatabaseService().getTodosOsCortes(dataInicio: inicioHoje);
-    _streamBarbeiros = DatabaseService().getBarbeiros();
+    _streamCortes = Provider.of<DatabaseService>(context, listen: false).getTodosOsCortes(dataInicio: inicioHoje);
+    _streamBarbeiros = Provider.of<DatabaseService>(context, listen: false).getBarbeiros();
   }
 
   Widget _buildBotao(BuildContext context, String titulo, String tipo, IconData icone) {
@@ -335,7 +336,7 @@ class _AbaRelatoriosState extends State<AbaRelatorios> {
                         Row(
                           children: [
                             GestureDetector(behavior: HitTestBehavior.opaque,
-                              onTap: () => DatabaseService().marcarComoPago(b.id),
+                              onTap: () => Provider.of<DatabaseService>(context, listen: false).marcarComoPago(b.id),
                               child: const Text('Pagar', style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                             const SizedBox(width: 24),
@@ -391,13 +392,14 @@ class DetalheRelatorioScreen extends StatefulWidget {
 }
 
 class _DetalheRelatorioScreenState extends State<DetalheRelatorioScreen> {
-  final DatabaseService _db = DatabaseService();
+  late DatabaseService _db;
   String _barbeiroSelecionado = 'Todos';
   late Stream<List<CorteModel>> _streamCortes;
 
   @override
   void initState() {
     super.initState();
+    _db = Provider.of<DatabaseService>(context, listen: false);
     DateTime agora = DateTime.now();
     DateTime inicioHoje = DateTime(agora.year, agora.month, agora.day);
     DateTime inicioSemana = inicioHoje.subtract(Duration(days: agora.weekday - 1));
@@ -597,7 +599,8 @@ class _AbaServicosState extends State<AbaServicos> {
   @override
   void initState() {
     super.initState();
-    _streamServicos = DatabaseService().getServicos();
+    _db = Provider.of<DatabaseService>(context, listen: false);
+    _streamServicos = Provider.of<DatabaseService>(context, listen: false).getServicos();
   }
 
   @override
@@ -649,7 +652,7 @@ class _AbaServicosState extends State<AbaServicos> {
                           children: [
                             GestureDetector(behavior: HitTestBehavior.opaque,
                               onTap: () => mostrarDialogServico(context, id: servico.id, nomeAtual: servico.nome, precoAtual: servico.preco, comissaoAtual: com, onSalvar: (nome, preco, comissao) {
-                                DatabaseService().updateServico(servico.id, nome, preco, comissao);
+                                Provider.of<DatabaseService>(context, listen: false).updateServico(servico.id, nome, preco, comissao);
                               }),
                               child: const Icon(Icons.edit, color: Color(0xFF737784)),
                             ),
@@ -660,7 +663,7 @@ class _AbaServicosState extends State<AbaServicos> {
                                   context, 
                                   titulo: 'Excluir Serviço', 
                                   mensagem: 'Tem certeza que deseja excluir o serviço "${servico.nome}"? Essa ação não pode ser desfeita.', 
-                                  onConfirmar: () => DatabaseService().deleteServico(servico.id),
+                                  onConfirmar: () => Provider.of<DatabaseService>(context, listen: false).deleteServico(servico.id),
                                 );
                               },
                               child: const Icon(Icons.delete, color: Color(0xFFB22222)),
@@ -693,7 +696,8 @@ class _AbaFinanceiroState extends State<AbaFinanceiro> {
   @override
   void initState() {
     super.initState();
-    _streamDespesas = DatabaseService().getDespesasEVales();
+    _db = Provider.of<DatabaseService>(context, listen: false);
+    _streamDespesas = Provider.of<DatabaseService>(context, listen: false).getDespesasEVales();
   }
 
   @override

@@ -19,6 +19,7 @@ class AuthCheck extends StatefulWidget {
 
 class _AuthCheckState extends State<AuthCheck> {
   final LocalAuthentication _localAuth = LocalAuthentication();
+  bool _showFallback = false;
 
   @override
   void initState() {
@@ -50,8 +51,8 @@ class _AuthCheckState extends State<AuthCheck> {
         if (didAuthenticate) {
           _entrarNoApp(user);
         } else {
-          // Se o usuário cancelar a digital, redireciona para o login sem deslogar
-          if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+          // Se o usuário cancelar a digital, exibe a tela de fallback
+          if (mounted) setState(() => _showFallback = true);
         }
       } else {
         // Se o celular for antigo e não tiver digital, entra direto
@@ -94,17 +95,38 @@ class _AuthCheckState extends State<AuthCheck> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.black, // Fundo escuro premium
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.fingerprint, size: 90, color: Colors.white),
-            SizedBox(height: 25),
-            Text('Verificando Segurança...', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(height: 20),
-            CircularProgressIndicator(color: Colors.white),
+            const Icon(Icons.fingerprint, size: 90, color: Colors.white),
+            const SizedBox(height: 25),
+            Text(_showFallback ? 'Autenticação Cancelada' : 'Verificando Segurança...', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            if (!_showFallback) const CircularProgressIndicator(color: Colors.white),
+            if (_showFallback)
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => _showFallback = false);
+                      _verificarAuth();
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
+                    child: const Text('Tentar Novamente'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (context.mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                    },
+                    child: const Text('Fazer Login Manual', style: TextStyle(color: Colors.grey)),
+                  ),
+                ],
+              )
           ],
         ),
       ),

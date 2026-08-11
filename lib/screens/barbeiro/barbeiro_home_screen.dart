@@ -14,7 +14,7 @@ class BarbeiroHomeScreen extends StatefulWidget {
 }
 
 class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
-  final DatabaseService _db = DatabaseService();
+  late DatabaseService _db;
   final List<Map<String, dynamic>> _servicosSelecionados = [];
   String _formaPagamento = 'PIX';
   bool _salvando = false;
@@ -23,6 +23,7 @@ class _BarbeiroHomeScreenState extends State<BarbeiroHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _db = Provider.of<DatabaseService>(context, listen: false);
     _servicosStream = _db.getServicos();
   }
 

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 // Importe os caminhos corretos de acordo com as pastas do seu projeto
 import 'services/auth_service.dart';
+import 'services/database_service.dart';
 
 import 'firebase_options.dart';
 
@@ -16,7 +17,10 @@ void main() async {
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthService())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        Provider<DatabaseService>(create: (_) => DatabaseService()),
+      ],
       child: const MyApp(),
     ),
   );
